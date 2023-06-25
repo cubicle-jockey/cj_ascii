@@ -194,7 +194,7 @@ impl Add<String> for AsciiString {
 
     /// Concatenates an `AsciiString` and a `String`.
     fn add(mut self, rhs: String) -> Self::Output {
-        let mut rhs: Self = rhs.into();
+        let rhs: Self = rhs.into();
         self.bytes.extend(rhs.bytes);
         self
     }
@@ -205,7 +205,7 @@ impl Add<&String> for AsciiString {
 
     /// Concatenates an `AsciiString` and a `&String`.
     fn add(mut self, rhs: &String) -> Self::Output {
-        let mut rhs: Self = rhs.into();
+        let rhs: Self = rhs.into();
         self.bytes.extend(rhs.bytes);
         self
     }
@@ -216,7 +216,7 @@ impl Add<&str> for AsciiString {
 
     /// Concatenates an `AsciiString` and a `&str`.
     fn add(mut self, rhs: &str) -> Self::Output {
-        let mut rhs: Self = rhs.into();
+        let rhs: Self = rhs.into();
         self.bytes.extend(rhs.bytes);
         self
     }
