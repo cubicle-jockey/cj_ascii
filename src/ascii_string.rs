@@ -10,6 +10,7 @@ use std::ops::{Add, AddAssign, Index, IndexMut};
 /// <br>
 /// Because it accepts Extended ASCII, all u8 values are accepted.
 #[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Default)]
 pub struct AsciiString {
     bytes: VecDeque<u8>,
 }
@@ -63,19 +64,11 @@ impl AsciiString {
     }
     /// Pops a char from the end of the `AsciiString`.
     pub fn pop_char(&mut self) -> Option<char> {
-        if let Some(byte) = self.bytes.pop_back() {
-            Some(byte.to_ascii_char())
-        } else {
-            None
-        }
+        self.bytes.pop_back().map(|byte| byte.to_ascii_char())
     }
     /// Pops a char from the front of the `AsciiString`.
     pub fn pop_front_char(&mut self) -> Option<char> {
-        if let Some(byte) = self.bytes.pop_front() {
-            Some(byte.to_ascii_char())
-        } else {
-            None
-        }
+        self.bytes.pop_front().map(|byte| byte.to_ascii_char())
     }
     /// Pushes a string onto the end of the `AsciiString`.
     pub fn push_str(&mut self, string: &str) {
@@ -147,13 +140,7 @@ impl AsciiString {
     }
 }
 
-impl Default for AsciiString {
-    fn default() -> Self {
-        Self {
-            bytes: VecDeque::new(),
-        }
-    }
-}
+
 
 impl Index<usize> for AsciiString {
     type Output = u8;
