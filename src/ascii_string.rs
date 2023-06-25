@@ -9,8 +9,7 @@ use std::ops::{Add, AddAssign, Index, IndexMut};
 /// A String like struct that contains ASCII and Extended ASCII characters.
 /// <br>
 /// Because it accepts Extended ASCII, all u8 values are accepted.
-#[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-#[derive(Default)]
+#[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
 pub struct AsciiString {
     bytes: VecDeque<u8>,
 }
@@ -139,8 +138,6 @@ impl AsciiString {
         self.bytes.iter().map(|byte| byte.to_ascii_char())
     }
 }
-
-
 
 impl Index<usize> for AsciiString {
     type Output = u8;
@@ -421,6 +418,37 @@ impl Debug for AsciiString {
     }
 }
 
+#[cfg(feature = "serde")]
+use serde::ser::SerializeSeq;
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
+
+#[cfg(feature = "serde")]
+impl Serialize for AsciiString {
+    // fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+    //     let mut seq = serializer.serialize_seq(Some(self.bytes.len()))?;
+    //     for byte in &self.bytes {
+    //         seq.serialize_element(byte)?;
+    //     }
+    //     seq.end()
+    // }
+    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        serializer.serialize_str(&String::from(self))
+    }
+}
+
+#[cfg(feature = "serde")]
+impl<'de> Deserialize<'de> for AsciiString {
+    // fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+    //     let bytes = VecDeque::deserialize(deserializer)?;
+    //     Ok(Self { bytes })
+    // }
+    fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        let string = String::deserialize(deserializer)?;
+        Ok(Self::from(string))
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
@@ -602,5 +630,30 @@ mod test {
             *c = 'D'.ascii_ord_unchecked();
         }
         assert_eq!(&string.to_string(), "DDD");
+    }
+
+    #[cfg(feature = "serde")]
+    #[test]
+    fn test_serde() {
+        use crate::ascii_string::AsciiString;
+        let mut string = AsciiString::with_capacity(3);
+        string = "ABC".into();
+        let serialized = serde_json::to_string(&string).unwrap();
+        assert_eq!(serialized, "\"ABC\"");
+        let deserialized: AsciiString = serde_json::from_str(&serialized).unwrap();
+        assert_eq!(deserialized, string);
+    }
+
+    #[cfg(feature = "serde")]
+    #[test]
+    fn test_serde_full_u8_range() {
+        use crate::ascii_string::AsciiString;
+        let mut string = AsciiString::with_capacity(256);
+        for i in 0..=255 {
+            string += i;
+        }
+        let serialized = serde_json::to_string(&string).unwrap();
+        let deserialized: AsciiString = serde_json::from_str(&serialized).unwrap();
+        assert_eq!(deserialized, string);
     }
 }

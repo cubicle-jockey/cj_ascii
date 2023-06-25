@@ -22,13 +22,14 @@ impl AsciiOrdToChar for &u8 {
 pub trait CharToAsciiOrd {
     /// Returns the ASCII ordinal value of the character, or `None` if the character is not ASCII.
     fn ascii_ord(&self) -> Option<u8>;
-    /// Returns the ASCII ordinal value of the character, or `default` if the character is not ASCII.
+    /// Returns the ASCII ordinal value of the character, or a `default` substitution if the character is not ASCII.
     #[inline]
     fn ascii_ord_or(&self, default: u8) -> u8 {
         self.ascii_ord().unwrap_or(default)
     }
-    /// # Safety
-    /// This function is unsafe because it does not check that the char is a valid ASCII character and will panic if conversion fails.
+    /// This is a convenience wrapper function that calls unwrap on ascii_ord().
+    /// <br>
+    /// Because it does not check that the conversion is successful before unwrapping, it will panic if conversion fails.
     #[inline]
     fn ascii_ord_unchecked(&self) -> u8 {
         self.ascii_ord().unwrap()

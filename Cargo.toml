@@ -10,3 +10,12 @@ name = "cj_ascii"
 path = "src/main.rs"
 
 [dependencies]
+serde = { version = "1.0", features = ["derive"], optional = true }
+
+[features]
+default = ["serde"]
+serialize = ["serde"]
+
+[dev-dependencies]
+serde_json = "1.0"
+

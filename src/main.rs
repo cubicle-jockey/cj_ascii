@@ -3,7 +3,6 @@ mod ascii_translators;
 
 use ascii_translators::*;
 use std::io::Read;
-use std::mem::size_of_val;
 
 mod ascii_string;
 mod ascii_traits;
@@ -24,8 +23,8 @@ pub fn main() {
         println!("{}: {}", i, i.to_ascii_char());
     }
 
-    let mut string = ascii_string::AsciiString::new();
-    string = "This is a test".into();
+    let mut string = AsciiString::from("This is a test");
+
     println!("{}", string);
 
     string.clear();
@@ -37,7 +36,7 @@ pub fn main() {
     println!("p2");
     println!("{string:?}");
 
-    let mut string2 = ascii_string::AsciiString::new();
+    let mut string2 = AsciiString::new();
     for b in 0u8..=255 {
         let ch: char = b.to_ascii_char();
         string2.push_char(ch);
@@ -77,7 +76,8 @@ fn perf_test() {
     println!("String = {}", string.len());
     println!("AsciiString = {}", ascii_string.len());
 
-    let string2: String = ascii_string.clone().into();
+    // let string2: String = ascii_string.clone().into();
+    let string2 = String::from(&ascii_string);
 
     println!("{}", string2 == string);
 
