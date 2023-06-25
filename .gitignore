@@ -1,2 +1,5 @@
 /target
 /Cargo.lock
+/.idea/cj_ascii.iml
+/.idea/modules.xml
+/.idea/vcs.xml
