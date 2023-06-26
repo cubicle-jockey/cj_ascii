@@ -34,16 +34,16 @@ impl AsciiString {
         self.bytes.is_empty()
     }
     /// Pushes a byte onto the end of the `AsciiString`.
-    pub fn push(&mut self, byte: u8) {
-        self.bytes.push_back(byte);
+    pub fn push<T: CharToAsciiOrd>(&mut self, value: T) {
+        self.bytes.push_back(value.ascii_ord_unchecked());
     }
     /// Pops a byte from the end of the `AsciiString`.
     pub fn pop(&mut self) -> Option<u8> {
         self.bytes.pop_back()
     }
     /// Pushes a byte onto the front of the `AsciiString`.
-    pub fn push_front(&mut self, byte: u8) {
-        self.bytes.push_front(byte);
+    pub fn push_front<T: CharToAsciiOrd>(&mut self, value: T) {
+        self.bytes.push_front(value.ascii_ord_unchecked());
     }
     /// Pops a byte from the front of the `AsciiString`.
     pub fn pop_front(&mut self) -> Option<u8> {
@@ -71,11 +71,11 @@ impl AsciiString {
     }
     /// Pushes a string onto the end of the `AsciiString`.
     pub fn push_str(&mut self, string: &str) {
-        *self += string //.into();
+        *self += string;
     }
     /// Pushes an `AsciiString` onto the end of the `AsciiString`.
     pub fn push_ascii_string(&mut self, string: &AsciiString) {
-        *self += string //.into();
+        *self += string;
     }
     /// Clears the `AsciiString`, removing all bytes.
     pub fn clear(&mut self) {
@@ -119,7 +119,10 @@ impl AsciiString {
     pub fn sort(&mut self) {
         self.bytes.make_contiguous().sort_unstable();
     }
-
+    /// Returns true if the `AsciiString` contains the given byte.
+    pub fn contains<T: CharToAsciiOrd>(&self, value: T) -> bool {
+        self.bytes.contains(&value.ascii_ord_unchecked())
+    }
     /// Returns a u8 iterator over the `AsciiString`.
     #[inline]
     pub fn iter(&self) -> Iter<u8> {
@@ -432,6 +435,8 @@ impl Serialize for AsciiString {
     //     }
     //     seq.end()
     // }
+    // this is fine for json and other formats where utf-8 is the "norm", but binary formats should use self.as_bytes directly instead
+    // since it's already serialized as a sequence of bytes.
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         serializer.serialize_str(&String::from(self))
     }
@@ -457,13 +462,13 @@ mod test {
     fn test_add_ascii_string() {
         use crate::ascii_string::AsciiString;
         let mut string = AsciiString::with_capacity(3);
-        string.bytes.push_back(65);
-        string.bytes.push_back(66);
-        string.bytes.push_back(67);
+        string.push(65);
+        string.push(66);
+        string.push(67);
         let mut string2 = AsciiString::with_capacity(3);
-        string2.bytes.push_back(68);
-        string2.bytes.push_back(69);
-        string2.bytes.push_back(70);
+        string2.push(68);
+        string2.push(69);
+        string2.push(70);
         let result = string + string2;
         assert_eq!(result.bytes.len(), 6);
         assert_eq!(result.bytes[0], 65);
@@ -475,12 +480,27 @@ mod test {
     }
 
     #[test]
+    fn test_add_chars() {
+        use crate::ascii_string::AsciiString;
+        let mut string = AsciiString::with_capacity(3);
+        string.push('A');
+        string.push('B');
+        string.push('C');
+        let result = string + 'D';
+        assert_eq!(result.bytes.len(), 4);
+        assert_eq!(result.bytes[0], 65);
+        assert_eq!(result.bytes[1], 66);
+        assert_eq!(result.bytes[2], 67);
+        assert_eq!(result.bytes[3], 68);
+    }
+
+    #[test]
     fn test_from_ascii_string() {
         use crate::ascii_string::AsciiString;
         let mut string = AsciiString::with_capacity(3);
-        string.bytes.push_back(65);
-        string.bytes.push_back(66);
-        string.bytes.push_back(67);
+        string.push(65);
+        string.push(66);
+        string.push(67);
         let result = String::from(&string);
         assert_eq!(result.len(), 3);
         assert_eq!(result.chars().nth(0).unwrap(), 'A');
@@ -567,6 +587,19 @@ mod test {
         string += 66;
         string += 67;
         assert_eq!(&string.to_string(), "ABC");
+    }
+
+    #[test]
+    fn test_add_assign_various() {
+        use crate::ascii_string::AsciiString;
+        let mut string = AsciiString::with_capacity(3);
+        string += 'A';
+        string += 66;
+        string += "C";
+        string += "DEF";
+        let mut string2 = AsciiString::from(&string);
+        string += string2;
+        assert_eq!(&string.to_string(), "ABCDEFABCDEF");
     }
 
     #[test]

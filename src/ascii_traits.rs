@@ -49,3 +49,10 @@ impl CharToAsciiOrd for &char {
         char_ref_to_ascii_ord(self)
     }
 }
+
+impl CharToAsciiOrd for u8 {
+    #[inline]
+    fn ascii_ord(&self) -> Option<u8> {
+        Some(*self)
+    }
+}
