@@ -34,6 +34,17 @@ pub trait CharToAsciiOrd {
     fn ascii_ord_unchecked(&self) -> u8 {
         self.ascii_ord().unwrap()
     }
+    /// Returns the ASCII ordinal value of a character in a Result.
+    /// <br>
+    /// use ascii_ord() instead if you don't need the error message.
+    #[inline]
+    fn try_ascii_ord(&self) -> Result<u8, String>
+    where
+        Self: std::fmt::Display,
+    {
+        self.ascii_ord()
+            .ok_or(format!("Character {self} is not ASCII"))
+    }
 }
 
 impl CharToAsciiOrd for char {
