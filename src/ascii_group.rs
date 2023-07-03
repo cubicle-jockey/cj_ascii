@@ -43,7 +43,7 @@ pub struct AsciiGroupIter<'a> {
 }
 
 impl AsciiGroupIter<'_> {
-    pub fn new<'a>(iter: Iter<'a, u8>) -> AsciiGroupIter<'a> {
+    pub fn new(iter: Iter<'_, u8>) -> AsciiGroupIter<'_> {
         AsciiGroupIter { inner: iter }
     }
 }
@@ -53,7 +53,7 @@ impl Iterator for AsciiGroupIter<'_> {
 
     #[inline]
     fn next(&mut self) -> Option<Self::Item> {
-        self.inner.next().map(|c| AsciiGroup::new(c))
+        self.inner.next().map(AsciiGroup::new)
     }
 }
 

@@ -23,7 +23,7 @@ codegen-units = 1  # huge performance boost, especially for closures
 serde = { version = "1.0", features = ["derive"], optional = true }
 
 [features]
-default = []
+default = ["serde"]
 serialize = ["serde"]
 
 [dev-dependencies]

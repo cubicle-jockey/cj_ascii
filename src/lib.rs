@@ -11,3 +11,7 @@ pub mod prelude {
     pub use crate::ascii_traits::*;
     pub use crate::ascii_translators::*;
 }
+
+#[doc = include_str!("../README.md")]
+#[cfg(doctest)]
+pub struct ReadmeDoctests;

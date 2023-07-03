@@ -1,5 +1,6 @@
 use crate::ascii_group::AsciiGroupIter;
 use crate::ascii_traits::{AsciiOrdToChar, CharToAsciiOrd};
+use std::borrow::Cow;
 use std::collections::vec_deque::{Iter, IterMut};
 use std::collections::VecDeque;
 use std::fmt;
@@ -110,6 +111,19 @@ use std::ops::{Add, AddAssign, Index, IndexMut};
 /// assert_eq!(iter.next(), Some('E'));
 /// assert_eq!(iter.next(), Some('F'));
 /// assert_eq!(iter.next(), None);
+/// ```
+/// Iter AsciiGroup
+/// ```
+/// # use cj_ascii::prelude::*;
+/// let astring = AsciiString::try_from("Hello World!").unwrap();
+/// for x in astring.iter_ascii_group() {
+///     match x {
+///        AsciiGroup::PrintableCtrl(_) => println!("PrintableCtrl: {}", x.as_char()),
+///        AsciiGroup::Printable(_) => println!("PrintableAscii: {}", x.as_char()),
+///        AsciiGroup::NonPrintableCtrl(_) => println!("NonPrintableCtrl: {}", x.as_byte()),
+///        AsciiGroup::Extended(_) => println!("Extended: {}", x.as_byte()),
+///     }
+/// }
 /// ```
 /// Push
 /// ```
@@ -815,6 +829,24 @@ impl TryFrom<&String> for AsciiString {
     }
 }
 
+impl TryFrom<Cow<'_, str>> for AsciiString {
+    type Error = String;
+
+    fn try_from(value: Cow<str>) -> Result<Self, Self::Error> {
+        let mut result = Self::with_capacity(value.len());
+        for (inx, character) in value.chars().enumerate() {
+            if let Some(character) = character.ascii_ord() {
+                result.bytes.push_back(character);
+            } else {
+                return Err(format!(
+                    r#"Non-ASCII character "{character}" found at index {inx}"#
+                ));
+            }
+        }
+        Ok(result)
+    }
+}
+
 impl From<&AsciiString> for Vec<u8> {
     fn from(value: &AsciiString) -> Self {
         value.bytes.clone().into()
@@ -959,8 +991,8 @@ impl Debug for AsciiString {
     }
 }
 
-#[cfg(feature = "serde")]
-use serde::ser::SerializeSeq;
+//#[cfg(feature = "serde")]
+//use serde::ser::SerializeSeq;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
@@ -973,7 +1005,8 @@ impl Serialize for AsciiString {
     //     }
     //     seq.end()
     // }
-    // this is fine for json and other formats where utf-8 is the "norm", but binary formats should use self.as_bytes directly instead
+    // still thinking about this.
+    // this works for stringly type serialization (to json,yaml etc), but binary serialization (raw bytes) should use self.as_bytes directly
     // since it's already serialized as a sequence of bytes.
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         serializer.serialize_str(&String::from(self))
@@ -989,14 +1022,17 @@ impl<'de> Deserialize<'de> for AsciiString {
     fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
         let string = String::deserialize(deserializer)?;
         //Ok(Self::try_from(string)?)
-        Self::try_from(string)
+        let result = Self::try_from(string);
+        match result {
+            Ok(value) => Ok(value),
+            Err(error) => Err(serde::de::Error::custom(error)),
+        }
     }
 }
 
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::ascii_group::AsciiGroup;
 
     #[test]
     fn test_add_ascii_string() {
@@ -1075,6 +1111,19 @@ mod test {
         use crate::ascii_string::AsciiString;
         let string = "ABC";
         let result = AsciiString::try_from(string);
+        assert!(result.is_ok());
+        let result = result.unwrap();
+        assert_eq!(result.bytes.len(), 3);
+        assert_eq!(result.bytes[0], 65);
+        assert_eq!(result.bytes[1], 66);
+        assert_eq!(result.bytes[2], 67);
+    }
+
+    #[test]
+    fn test_try_from_cow_string() {
+        use crate::ascii_string::AsciiString;
+        let cstring = Cow::from("ABC".to_string());
+        let result = AsciiString::try_from(cstring);
         assert!(result.is_ok());
         let result = result.unwrap();
         assert_eq!(result.bytes.len(), 3);
@@ -1239,7 +1288,7 @@ mod test {
     fn test_serde() {
         use crate::ascii_string::AsciiString;
         let mut string = AsciiString::with_capacity(3);
-        string = "ABC".into();
+        string += "ABC";
         let serialized = serde_json::to_string(&string).unwrap();
         assert_eq!(serialized, "\"ABC\"");
         let deserialized: AsciiString = serde_json::from_str(&serialized).unwrap();
