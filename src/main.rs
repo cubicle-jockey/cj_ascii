@@ -6,8 +6,11 @@ use std::io::Read;
 
 mod ascii_string;
 mod ascii_traits;
-use crate::ascii_string::*;
+use ascii_consts::*;
+use ascii_string::*;
 use ascii_traits::*;
+mod ascii_group;
+use ascii_group::*;
 
 pub fn main() {
     for i in 0..=255 {
@@ -23,7 +26,7 @@ pub fn main() {
         println!("{}: {}", i, i.to_ascii_char());
     }
 
-    let mut string = AsciiString::from("This is a test");
+    let mut string = AsciiString::try_from("This is a test").unwrap();
 
     println!("{}", string);
 
@@ -60,70 +63,83 @@ pub fn main() {
 }
 
 fn perf_test() {
-    let file_name = "C:/Temp/EnglishWords/words_ansi.txt";
+    let file_name = "C:/Temp/EnglishWords/words_ansi.txt"; // 5 MB file
     let mut file = std::fs::File::open(file_name).unwrap();
     let mut string = String::new();
     file.read_to_string(&mut string).unwrap();
 
     let start = std::time::Instant::now();
-
-    let ascii_string: AsciiString = string.as_str().into();
-
+    let ascii_string: AsciiString = string.as_str().try_into().unwrap();
     let end = start.elapsed().as_millis();
-
     println!("{} ms", end);
-
     println!("String = {}", string.len());
     println!("AsciiString = {}", ascii_string.len());
 
     // let string2: String = ascii_string.clone().into();
     let string2 = String::from(&ascii_string);
-
     println!("{}", string2 == string);
-
-    let start = std::time::Instant::now();
-    let mut z_count = 0;
-    for c in string2.chars() {
-        if c == 'z' {
-            z_count += 1;
+    {
+        let start = std::time::Instant::now();
+        let mut z_count = 0;
+        for c in string2.chars() {
+            if c == 'z' {
+                z_count += 1;
+            }
         }
+        let end = start.elapsed().as_millis();
+        println!("String: for c in chars() {z_count} z's found in {end} ms",);
     }
-
-    let end = start.elapsed().as_millis();
-    println!("String {} z's found in {} ms", z_count, end);
-
-    let start = std::time::Instant::now();
-    let mut z_count = 0;
-    for c in ascii_string.iter_ascii() {
-        if c == 'z' {
-            z_count += 1;
+    {
+        let start = std::time::Instant::now();
+        let z_count = string2.chars().filter(|c| c == &'z').count();
+        let end = start.elapsed().as_millis();
+        println!("String: chars().filter() {z_count} z's found in {end} ms",);
+    }
+    {
+        let start = std::time::Instant::now();
+        let mut z_count = 0;
+        for c in ascii_string.iter_ascii() {
+            if c == 'z' {
+                z_count += 1;
+            }
         }
+        let end = start.elapsed().as_millis();
+        println!("AnsiString: for c in iter_ascii() {z_count} z's found in {end} ms",);
     }
-
-    let end = start.elapsed().as_millis();
-    println!("AnsiString {} z's found in {} ms", z_count, end);
-
-    let start = std::time::Instant::now();
-    let mut z_count = 0;
-    for b in ascii_string.iter() {
-        if b == &b'z' {
-            z_count += 1;
+    {
+        let start = std::time::Instant::now();
+        let z_count = ascii_string.iter_ascii().filter(|c| c == &'z').count();
+        let end = start.elapsed().as_millis();
+        println!("AnsiString: iter_ascii().filter() {z_count} z's filtered in {end} ms",);
+    }
+    {
+        let start = std::time::Instant::now();
+        let mut z_count = 0;
+        for b in ascii_string.iter() {
+            if b == &LATIN_SMALL_LETTER_Z {
+                z_count += 1;
+            }
         }
+        let end = start.elapsed().as_millis();
+        println!("AnsiByte: for b in iter() {z_count} z's found in {end} ms",);
     }
-
-    let end = start.elapsed().as_millis();
-    println!("AnsiByte {} z's found in {} ms", z_count, end);
-
-    let start = std::time::Instant::now();
-    let mut z_count = 0;
-    for b in ascii_string.iter() {
-        let c = b.to_ascii_char();
-        let b = c.ascii_ord_unchecked();
-        if b == b'z' {
-            z_count += 1;
+    {
+        let start = std::time::Instant::now();
+        let z_count = ascii_string.iter().filter(|b| b == &&b'z').count();
+        let end = start.elapsed().as_millis();
+        println!("AnsiByte: iter().filter() {z_count} z's filtered in {end} ms",);
+    }
+    {
+        let start = std::time::Instant::now();
+        let mut z_count = 0;
+        for b in ascii_string.iter() {
+            let c = b.to_ascii_char();
+            let b = c.ascii_ord_unchecked();
+            if b == b'z' {
+                z_count += 1;
+            }
         }
+        let end = start.elapsed().as_millis();
+        println!("AnsiByte to/from {z_count} z's found in {end} ms",);
     }
-
-    let end = start.elapsed().as_millis();
-    println!("AnsiByte to/from {} z's found in {} ms", z_count, end);
 }
