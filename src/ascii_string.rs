@@ -1,3 +1,4 @@
+use crate::ascii_group::AsciiGroupIter;
 use crate::ascii_traits::{AsciiOrdToChar, CharToAsciiOrd};
 use std::collections::vec_deque::{Iter, IterMut};
 use std::collections::VecDeque;
@@ -9,6 +10,164 @@ use std::ops::{Add, AddAssign, Index, IndexMut};
 /// A String like struct that contains ASCII and Extended ASCII characters.
 /// <br>
 /// Because it accepts Extended ASCII, all u8 values are accepted.
+/// # samples
+/// ```
+/// use cj_ascii::prelude::*;
+///
+/// let mut astring = AsciiString::try_from("This is a test").unwrap();
+/// let mut astring2 = AsciiString::with_capacity(14);
+/// astring2 += "This";
+/// astring2 += " is";
+/// astring2 += " a";
+/// astring2 += " test";
+/// assert_eq!(astring, astring2);
+/// ```
+/// Mix of char, u8, &str and AsciiString concatenation.
+/// ```
+/// # use cj_ascii::prelude::*;
+/// let mut astring = AsciiString::new();
+/// astring += 'A';
+/// astring += 66;
+/// astring += "C";
+/// astring += "DEF";
+/// let astring2 = AsciiString::from(&astring);
+/// astring += astring2;
+/// assert_eq!(&astring.to_string(), "ABCDEFABCDEF");
+/// ```
+/// Indexing
+/// ```
+/// # use cj_ascii::prelude::*;
+/// let mut astring = AsciiString::new();
+/// astring += 'A';
+/// astring += 66;
+/// astring += "C";
+/// astring += "DEF";
+/// assert_eq!(astring[0], 'A'.ascii_ord_unchecked());
+/// assert_eq!(astring[1].to_ascii_char(), 'B');
+/// assert_eq!(astring[2], 67);
+/// assert_eq!(astring[3], 68);
+/// assert_eq!(astring[4], 69);
+/// assert_eq!(astring[5], 70);
+/// ```
+/// Indexing Mut
+/// ```
+/// # use cj_ascii::prelude::*;
+/// let mut astring = AsciiString::new();
+/// astring += "ABCDEF";
+/// astring[0] = 71;
+/// astring[1] = 'H'.ascii_ord_unchecked();
+/// astring[2] = 73;
+/// astring[3] = 74;
+/// astring[4] = 75;
+/// astring[5] = 76;
+/// assert_eq!(astring[0], 'G'.ascii_ord_unchecked());
+/// assert_eq!(astring.to_string(), "GHIJKL");
+/// ```
+/// Iteration
+/// ```
+/// # use cj_ascii::prelude::*;
+/// let mut astring = AsciiString::new();
+/// astring += "ABCDEF";
+/// let mut iter = astring.iter();
+/// assert_eq!(iter.next(), Some(&65));
+/// assert_eq!(iter.next(), Some(&66));
+/// assert_eq!(iter.next(), Some(&67));
+/// assert_eq!(iter.next(), Some(&68));
+/// assert_eq!(iter.next(), Some(&69));
+/// assert_eq!(iter.next(), Some(&70));
+/// assert_eq!(iter.next(), None);
+/// // or
+/// let mut iter = astring.iter();
+/// assert_eq!(iter.next(), Some(&'A'.ascii_ord_unchecked()));
+/// assert_eq!(iter.next(), Some(&'B'.ascii_ord_unchecked()));
+/// assert_eq!(iter.next(), Some(&'C'.ascii_ord_unchecked()));
+/// assert_eq!(iter.next(), Some(&'D'.ascii_ord_unchecked()));
+/// assert_eq!(iter.next(), Some(&'E'.ascii_ord_unchecked()));
+/// assert_eq!(iter.next(), Some(&'F'.ascii_ord_unchecked()));
+/// assert_eq!(iter.next(), None);
+/// ```
+/// Iteration Mut
+/// ```
+/// # use cj_ascii::prelude::*;
+/// let mut astring = AsciiString::new();
+/// astring += "ABCDEF";
+/// let mut iter = astring.iter_mut();
+/// for c in iter {
+///    *c = *c + 1;
+/// }
+/// assert_eq!(astring.to_string(), "BCDEFG");
+/// ```
+/// Iter Ascii
+/// ```
+/// # use cj_ascii::prelude::*;
+/// let mut astring = AsciiString::new();
+/// astring += "ABCDEF";
+/// let mut iter = astring.iter_ascii();
+/// assert_eq!(iter.next(), Some('A'));
+/// assert_eq!(iter.next(), Some('B'));
+/// assert_eq!(iter.next(), Some('C'));
+/// assert_eq!(iter.next(), Some('D'));
+/// assert_eq!(iter.next(), Some('E'));
+/// assert_eq!(iter.next(), Some('F'));
+/// assert_eq!(iter.next(), None);
+/// ```
+/// Push
+/// ```
+/// # use cj_ascii::prelude::*;
+/// let mut astring = AsciiString::new();
+/// astring.push('A');
+/// astring.push(66);
+/// astring.push('C');
+/// astring.push('D');
+/// assert_eq!(astring.to_string(), "ABCD");
+/// astring.push_front('Z');
+/// astring.push_front(89);
+/// astring.push_front('X');
+/// assert_eq!(astring.to_string(), "XYZABCD");
+/// ```
+/// Try Push
+/// ```
+/// # use cj_ascii::prelude::*;
+/// let mut astring = AsciiString::new();
+/// astring.try_push('A').unwrap();
+/// astring.try_push(66).unwrap();
+/// astring.try_push('C').unwrap();
+/// astring.try_push('D').unwrap();
+/// assert!(astring.try_push('€').is_err());
+/// assert_eq!(astring.to_string(), "ABCD");
+///
+/// let mut astring = AsciiString::new();
+/// astring.try_push_front('A').unwrap();
+/// astring.try_push_front(66).unwrap();
+/// astring.try_push_front('C').unwrap();
+/// astring.try_push_front('D').unwrap();
+/// assert!(astring.try_push_front('€').is_err());
+/// assert_eq!(astring.to_string(), "DCBA");
+/// ```
+/// Push str
+/// ```
+/// # use cj_ascii::prelude::*;
+/// let mut astring = AsciiString::new();
+/// astring.push_str("ABC");
+/// astring.push_str("DEF");
+/// assert_eq!(astring.to_string(), "ABCDEF");
+/// ```
+/// Push str Lossy
+/// ```
+/// # use cj_ascii::prelude::*;
+/// let mut astring = AsciiString::new();
+/// astring.push_str_lossy("ABCD");
+/// astring.push_str_lossy("€");
+/// assert_eq!(astring.to_string(), "ABCD ");
+/// ```
+/// Invalid Ascii
+/// ```
+/// # use cj_ascii::prelude::*;
+/// let string = "ABC€";
+/// let result = AsciiString::try_from(string);
+/// assert!(result.is_err());
+/// ```
+
 #[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
 pub struct AsciiString {
     bytes: VecDeque<u8>,
@@ -33,33 +192,142 @@ impl AsciiString {
     pub fn is_empty(&self) -> bool {
         self.bytes.is_empty()
     }
-    /// Pushes a byte onto the end of the `AsciiString`.
+    /// Pushes a char or byte onto the end of the `AsciiString`.
+    /// # Panics
+    /// * If a char is supplied and is not ASCII/Extended ASCII.
+    /// * using byte (u8) will never panic.
+    /// # Examples
+    /// ```
+    /// # use cj_ascii::prelude::*;
+    /// let mut astring = AsciiString::new();
+    /// astring.push('A');
+    /// astring.push(66);
+    /// astring.push('C');
+    /// astring.push('D');
+    /// //astring.push('€'); // Will panic!
+    /// ```
     pub fn push<T: CharToAsciiOrd>(&mut self, value: T) {
         self.bytes.push_back(value.ascii_ord_unchecked());
+    }
+    /// Pushes a char or byte onto the end of the `AsciiString`.
+    /// # Errors
+    /// * If a char is supplied and is not ASCII/Extended ASCII.
+    /// * using byte (u8) will never error.
+    /// # Examples
+    /// ```
+    /// # use cj_ascii::prelude::*;
+    /// let mut astring = AsciiString::new();
+    /// astring.try_push('A').unwrap();
+    /// astring.try_push(66).unwrap();
+    /// astring.try_push('C').unwrap();
+    /// astring.try_push('D').unwrap();
+    /// assert!(astring.try_push('€').is_err());
+    /// ```
+    pub fn try_push<T: CharToAsciiOrd + Display>(&mut self, value: T) -> Result<(), String> {
+        self.bytes.push_back(value.try_ascii_ord()?);
+        Ok(())
     }
     /// Pops a byte from the end of the `AsciiString`.
     pub fn pop(&mut self) -> Option<u8> {
         self.bytes.pop_back()
     }
-    /// Pushes a byte onto the front of the `AsciiString`.
+    /// Pushes a char or byte onto the front of the `AsciiString`.
+    /// # Panics
+    /// * If a char is supplied and is not ASCII/Extended ASCII.
+    /// * using byte (u8) will never panic.
+    /// # Examples
+    /// ```
+    /// # use cj_ascii::prelude::*;
+    /// let mut astring = AsciiString::new();
+    /// astring.push_front('A');
+    /// astring.push_front(66);
+    /// astring.push_front('C');
+    /// astring.push_front('D');
+    /// //astring.push_front('€'); // Will panic!
+    /// assert_eq!(astring.to_string(), "DCBA");
+    /// ```
     pub fn push_front<T: CharToAsciiOrd>(&mut self, value: T) {
         self.bytes.push_front(value.ascii_ord_unchecked());
+    }
+    /// Pushes a char or byte onto the front of the `AsciiString`.
+    /// # Errors
+    /// * If a char is supplied and is not ASCII/Extended ASCII.
+    /// * using byte (u8) will never error.
+    /// # Examples
+    /// ```
+    /// # use cj_ascii::prelude::*;
+    /// let mut astring = AsciiString::new();
+    /// astring.try_push_front('A').unwrap();
+    /// astring.try_push_front(66).unwrap();
+    /// astring.try_push_front('C').unwrap();
+    /// astring.try_push_front('D').unwrap();
+    /// assert!(astring.try_push_front('€').is_err());
+    /// assert_eq!(astring.to_string(), "DCBA");
+    /// ```
+    pub fn try_push_front<T: CharToAsciiOrd + Display>(&mut self, value: T) -> Result<(), String> {
+        self.bytes.push_front(value.try_ascii_ord()?);
+        Ok(())
     }
     /// Pops a byte from the front of the `AsciiString`.
     pub fn pop_front(&mut self) -> Option<u8> {
         self.bytes.pop_front()
     }
     /// Pushes a char onto the end of the `AsciiString`.
-    /// * If the char is not ASCII/Extended ASCII, it will be ignored.
+    /// # Panics
+    /// * if the char is not ASCII/Extended ASCII.
+    /// # Examples
+    /// ```
+    /// # use cj_ascii::prelude::*;
+    /// let mut astring = AsciiString::new();
+    /// astring.push_char('A');
+    /// astring.push_char('B');
+    /// astring.push_char('C');
+    /// astring.push_char('D');
+    /// //astring.push_char('€'); // Will panic!
+    /// ```
     pub fn push_char(&mut self, character: char) {
-        *self += character //.into();
+        *self += character;
+    }
+    /// Pushes a char onto the end of the `AsciiString`.
+    /// # Errors
+    /// * if the char is not ASCII/Extended ASCII.
+    /// # Examples
+    /// ```
+    /// # use cj_ascii::prelude::*;
+    /// let mut astring = AsciiString::new();
+    /// astring.try_push_char('A').unwrap();
+    /// astring.try_push_char('B').unwrap();
+    /// astring.try_push_char('C').unwrap();
+    /// astring.try_push_char('D').unwrap();
+    /// assert!(astring.try_push_char('€').is_err());
+    /// ```
+    pub fn try_push_char(&mut self, character: char) -> Result<(), String> {
+        self.bytes.push_back(character.try_ascii_ord()?);
+        Ok(())
     }
     /// Pushes a char onto the front of the `AsciiString`.
-    /// * If the char is not ASCII/Extended ASCII, it will be ignored.
+    /// # Panics
+    /// * if the char is not ASCII/Extended ASCII.
     pub fn push_front_char(&mut self, character: char) {
-        if let Some(byte) = character.ascii_ord() {
-            self.bytes.push_front(byte);
-        }
+        self.bytes.push_front(character.ascii_ord_unchecked());
+    }
+    /// Pushes a char onto the front of the `AsciiString`.
+    /// # Errors
+    /// * if the char is not ASCII/Extended ASCII.
+    /// # Examples
+    /// ```
+    /// # use cj_ascii::prelude::*;
+    /// let mut astring = AsciiString::new();
+    /// astring.try_push_front_char('A').unwrap();
+    /// astring.try_push_front_char('B').unwrap();
+    /// astring.try_push_front_char('C').unwrap();
+    /// astring.try_push_front_char('D').unwrap();
+    /// assert!(astring.try_push_front_char('€').is_err());
+    /// assert_eq!(astring.to_string(), "DCBA");
+    /// ```
+    pub fn try_push_front_char(&mut self, character: char) -> Result<(), String> {
+        self.bytes.push_front(character.try_ascii_ord()?);
+        Ok(())
     }
     /// Pops a char from the end of the `AsciiString`.
     pub fn pop_char(&mut self) -> Option<char> {
@@ -70,8 +338,45 @@ impl AsciiString {
         self.bytes.pop_front().map(|byte| byte.to_ascii_char())
     }
     /// Pushes a string onto the end of the `AsciiString`.
+    /// # Panics
+    /// * if the string contains any non ASCII/Extended ASCII characters.
     pub fn push_str(&mut self, string: &str) {
         *self += string;
+    }
+    /// Pushes a string onto the end of the `AsciiString`.
+    /// # Errors
+    /// * if the string contains any non ASCII/Extended ASCII characters.
+    /// # Examples
+    /// ```
+    /// # use cj_ascii::prelude::*;
+    /// let mut astring = AsciiString::new();
+    /// astring.try_push_str("ABCD").unwrap();
+    /// assert!(astring.try_push_str("€").is_err());
+    /// ```
+    pub fn try_push_str(&mut self, string: &str) -> Result<(), String> {
+        let astr = AsciiString::try_from(string)?;
+        self.bytes.extend(astr.bytes);
+
+        Ok(())
+    }
+    /// Pushes a string onto the end of the `AsciiString`, replacing non ASCII/Extended ASCII characters with a space.
+    /// # Examples
+    /// ```
+    /// # use cj_ascii::prelude::*;
+    /// let mut astring = AsciiString::new();
+    /// astring.push_str_lossy("ABCD");
+    /// astring.push_str_lossy("€");
+    /// assert_eq!(astring.to_string(), "ABCD ");
+    /// ```
+    pub fn push_str_lossy(&mut self, string: &str) {
+        let str_len = string.len();
+        let my_remaining_capacity = self.remaining_capacity();
+        if str_len > my_remaining_capacity {
+            self.bytes.reserve(str_len - my_remaining_capacity);
+        }
+        for character in string.chars() {
+            self.push(character.ascii_ord_or(32));
+        }
     }
     /// Pushes an `AsciiString` onto the end of the `AsciiString`.
     pub fn push_ascii_string(&mut self, string: &AsciiString) {
@@ -88,6 +393,10 @@ impl AsciiString {
     /// Returns the capacity of the `AsciiString` in bytes.
     pub fn capacity(&self) -> usize {
         self.bytes.capacity()
+    }
+    /// Returns the number of bytes remaining to full capacity.
+    pub fn remaining_capacity(&self) -> usize {
+        self.bytes.capacity() - self.bytes.len()
     }
     /// Reserves capacity for at least `additional` more bytes to be inserted in the given `AsciiString`.
     pub fn reserve(&mut self, additional: usize) {
@@ -119,26 +428,122 @@ impl AsciiString {
     pub fn sort(&mut self) {
         self.bytes.make_contiguous().sort_unstable();
     }
-    /// Returns true if the `AsciiString` contains the given byte.
+    /// Returns true if the `AsciiString` contains the given char or byte.
+    /// # Panics
+    /// * If a char is supplied and is not ASCII/Extended ASCII.
+    /// * using byte (u8) will never panic.
+    /// # Examples
+    /// ```
+    /// # use cj_ascii::prelude::*;
+    /// let mut astring = AsciiString::try_from("Hello World!").unwrap();
+    /// assert!(astring.contains('H'));
+    /// assert!(astring.contains(72));
+    /// // assert!(!astring.contains('€')); // Will panic!
     pub fn contains<T: CharToAsciiOrd>(&self, value: T) -> bool {
         self.bytes.contains(&value.ascii_ord_unchecked())
     }
     /// Returns a u8 iterator over the `AsciiString`.
+    /// # Examples
+    /// ```
+    /// # use cj_ascii::prelude::*;
+    /// let astring = AsciiString::try_from("Hello World!").unwrap();
+    /// let mut iter = astring.iter();
+    /// assert_eq!(iter.next(), Some(&72));
+    /// assert_eq!(iter.next(), Some(&101));
+    /// assert_eq!(iter.next(), Some(&108));
+    /// assert_eq!(iter.next(), Some(&108));
+    /// assert_eq!(iter.next(), Some(&111));
+    /// assert_eq!(iter.next(), Some(&32));
+    /// assert_eq!(iter.next(), Some(&87));
+    /// assert_eq!(iter.next(), Some(&111));
+    /// assert_eq!(iter.next(), Some(&114));
+    /// assert_eq!(iter.next(), Some(&108));
+    /// assert_eq!(iter.next(), Some(&100));
+    /// assert_eq!(iter.next(), Some(&33));
+    /// assert_eq!(iter.next(), None);
+    /// ```
     #[inline]
     pub fn iter(&self) -> Iter<u8> {
         self.bytes.iter()
     }
 
     /// Returns a mutable u8 iterator over the `AsciiString`.
+    /// # Examples
+    /// ```
+    /// # use cj_ascii::prelude::*;
+    /// let mut astring = AsciiString::try_from("Hello World!").unwrap();
+    /// let mut iter = astring.iter_mut();
+    /// assert_eq!(iter.next(), Some(&mut 72));
+    /// assert_eq!(iter.next(), Some(&mut 101));
+    /// assert_eq!(iter.next(), Some(&mut 108));
+    /// assert_eq!(iter.next(), Some(&mut 108));
+    /// assert_eq!(iter.next(), Some(&mut 111));
+    /// assert_eq!(iter.next(), Some(&mut 32));
+    /// assert_eq!(iter.next(), Some(&mut 87));
+    /// assert_eq!(iter.next(), Some(&mut 111));
+    /// assert_eq!(iter.next(), Some(&mut 114));
+    /// assert_eq!(iter.next(), Some(&mut 108));
+    /// assert_eq!(iter.next(), Some(&mut 100));
+    /// assert_eq!(iter.next(), Some(&mut 33));
+    /// assert_eq!(iter.next(), None);
+    /// ```
+    /// ```
+    /// # use cj_ascii::prelude::*;
+    /// let mut astring = AsciiString::try_from("Hello World!").unwrap();
+    /// for byte in astring.iter_mut() {
+    ///    if *byte == 32 {
+    ///       *byte = 95;
+    ///   }
+    /// }
+    /// assert_eq!(astring, AsciiString::try_from("Hello_World!").unwrap());
+    /// ```
     #[inline]
     pub fn iter_mut(&mut self) -> IterMut<u8> {
         self.bytes.iter_mut()
     }
 
-    /// Returns a char iterator over the `AsciiString`.    
+    /// Returns a char iterator over the `AsciiString`.
+    /// # Examples
+    /// ```
+    /// # use cj_ascii::prelude::*;
+    /// let astring = AsciiString::try_from("Hello World!").unwrap();
+    /// let mut iter = astring.iter_ascii();
+    /// assert_eq!(iter.next(), Some('H'));
+    /// assert_eq!(iter.next(), Some('e'));
+    /// assert_eq!(iter.next(), Some('l'));
+    /// assert_eq!(iter.next(), Some('l'));
+    /// assert_eq!(iter.next(), Some('o'));
+    /// assert_eq!(iter.next(), Some(' '));
+    /// assert_eq!(iter.next(), Some('W'));
+    /// assert_eq!(iter.next(), Some('o'));
+    /// assert_eq!(iter.next(), Some('r'));
+    /// assert_eq!(iter.next(), Some('l'));
+    /// assert_eq!(iter.next(), Some('d'));
+    /// assert_eq!(iter.next(), Some('!'));
+    /// assert_eq!(iter.next(), None);
+    /// ```  
     #[inline]
     pub fn iter_ascii(&self) -> Map<Iter<'_, u8>, fn(&u8) -> char> {
         self.bytes.iter().map(|byte| byte.to_ascii_char())
+    }
+    /// Returns an AsciiGroup iterator over the `AsciiString`.
+    /// # Examples
+    /// ```
+    /// # use cj_ascii::prelude::*;
+    /// let astring = AsciiString::try_from("Hello World!").unwrap();
+    /// for x in astring.iter_ascii_group() {
+    ///     match x {
+    ///        AsciiGroup::PrintableCtrl(_) => println!("PrintableCtrl: {}", x.as_char()),
+    ///        AsciiGroup::Printable(_) => println!("PrintableAscii: {}", x.as_char()),
+    ///        AsciiGroup::NonPrintableCtrl(_) => println!("NonPrintableCtrl: {}", x.as_byte()),
+    ///        AsciiGroup::Extended(_) => println!("Extended: {}", x.as_byte()),
+    ///     }
+    /// }
+    /// ```
+    #[inline]
+    pub fn iter_ascii_group(&self) -> AsciiGroupIter {
+        let iter = self.iter();
+        AsciiGroupIter::new(iter)
     }
 }
 
@@ -180,8 +585,10 @@ impl Add<String> for AsciiString {
     type Output = Self;
 
     /// Concatenates an `AsciiString` and a `String`.
+    /// # Panics
+    /// Panics if the `String` contains non-ASCII/Extended ASCII characters.
     fn add(mut self, rhs: String) -> Self::Output {
-        let rhs: Self = rhs.into();
+        let rhs: Self = rhs.try_into().unwrap();
         self.bytes.extend(rhs.bytes);
         self
     }
@@ -191,8 +598,10 @@ impl Add<&String> for AsciiString {
     type Output = Self;
 
     /// Concatenates an `AsciiString` and a `&String`.
+    /// # Panics
+    /// Panics if the `String` contains non-ASCII/Extended ASCII characters.
     fn add(mut self, rhs: &String) -> Self::Output {
-        let rhs: Self = rhs.into();
+        let rhs: Self = rhs.try_into().unwrap();
         self.bytes.extend(rhs.bytes);
         self
     }
@@ -202,8 +611,10 @@ impl Add<&str> for AsciiString {
     type Output = Self;
 
     /// Concatenates an `AsciiString` and a `&str`.
+    /// # Panics
+    /// Panics if the `str` contains non-ASCII/Extended ASCII characters.
     fn add(mut self, rhs: &str) -> Self::Output {
-        let rhs: Self = rhs.into();
+        let rhs: Self = rhs.try_into().unwrap();
         self.bytes.extend(rhs.bytes);
         self
     }
@@ -212,6 +623,8 @@ impl Add<&str> for AsciiString {
 impl Add<char> for AsciiString {
     type Output = Self;
     /// Concatenates an `AsciiString` and a `char`.
+    /// # Panics
+    /// Panics if the `char` is not ASCII/Extended ASCII.
     fn add(mut self, rhs: char) -> Self::Output {
         self.bytes.push_back(rhs.ascii_ord_unchecked());
         self
@@ -221,6 +634,8 @@ impl Add<char> for AsciiString {
 impl Add<&char> for AsciiString {
     type Output = Self;
     /// Concatenates an `AsciiString` and a `&char`.
+    /// # Panics
+    /// Panics if the `char` is not ASCII/Extended ASCII.
     fn add(mut self, rhs: &char) -> Self::Output {
         self.bytes.push_back(rhs.ascii_ord_unchecked());
         self
@@ -240,26 +655,38 @@ impl AddAssign<&AsciiString> for AsciiString {
 }
 
 impl AddAssign<&str> for AsciiString {
+    /// Concatenates an `AsciiString` and a `&str`.
+    /// # Panics
+    /// Panics if the `str` contains non-ASCII/Extended ASCII characters.
     fn add_assign(&mut self, rhs: &str) {
-        let rhs = AsciiString::from(rhs); // = rhs.into();
+        let rhs = AsciiString::try_from(rhs).unwrap();
         self.bytes.extend(rhs.bytes);
     }
 }
 
 impl AddAssign<String> for AsciiString {
+    /// Concatenates an `AsciiString` and a `String`.
+    /// # Panics
+    /// Panics if the `String` contains non-ASCII/Extended ASCII characters.
     fn add_assign(&mut self, rhs: String) {
-        let rhs = AsciiString::from(rhs); // = rhs.into();
+        let rhs = AsciiString::try_from(rhs).unwrap();
         self.bytes.extend(rhs.bytes);
     }
 }
 
 impl AddAssign<char> for AsciiString {
+    /// Concatenates an `AsciiString` and a `char`.
+    /// # Panics
+    /// Panics if the `char` is not ASCII/Extended ASCII.
     fn add_assign(&mut self, rhs: char) {
         self.bytes.push_back(rhs.ascii_ord_unchecked());
     }
 }
 
 impl AddAssign<&char> for AsciiString {
+    /// Concatenates an `AsciiString` and a `&char`.
+    /// # Panics
+    /// Panics if the `char` is not ASCII/Extended ASCII.
     fn add_assign(&mut self, rhs: &char) {
         self.bytes.push_back(rhs.ascii_ord_unchecked());
     }
@@ -301,33 +728,90 @@ impl From<&AsciiString> for AsciiString {
     }
 }
 
-impl From<String> for AsciiString {
-    fn from(value: String) -> Self {
+// impl From<String> for AsciiString {
+//     fn from(value: String) -> Self {
+//         let mut result = Self::with_capacity(value.len());
+//         for character in value.chars() {
+//             result.bytes.push_back(character.ascii_ord_unchecked());
+//         }
+//         result
+//     }
+// }
+
+impl TryFrom<String> for AsciiString {
+    type Error = String;
+
+    fn try_from(value: String) -> Result<Self, Self::Error> {
         let mut result = Self::with_capacity(value.len());
-        for character in value.chars() {
-            result.bytes.push_back(character.ascii_ord_unchecked());
+        for (inx, character) in value.chars().enumerate() {
+            if let Some(character) = character.ascii_ord() {
+                result.bytes.push_back(character);
+            } else {
+                return Err(format!(
+                    r#"Non-ASCII character "{character}" found at index {inx}"#
+                ));
+            }
         }
-        result
+        Ok(result)
     }
 }
 
-impl From<&str> for AsciiString {
-    fn from(value: &str) -> Self {
+// impl From<&str> for AsciiString {
+//     fn from(value: &str) -> Self {
+//         let mut result = Self::with_capacity(value.len());
+//         for character in value.chars() {
+//             // result.bytes.push_back(character.ascii_ord_unchecked());
+//             result
+//                 .bytes
+//                 .push_back(character.ascii_ord().expect("Non-ASCII character found"));
+//         }
+//         result
+//     }
+// }
+
+impl TryFrom<&str> for AsciiString {
+    type Error = String;
+
+    fn try_from(value: &str) -> Result<Self, Self::Error> {
         let mut result = Self::with_capacity(value.len());
-        for character in value.chars() {
-            result.bytes.push_back(character.ascii_ord_unchecked());
+        for (inx, character) in value.chars().enumerate() {
+            if let Some(character) = character.ascii_ord() {
+                result.bytes.push_back(character);
+            } else {
+                return Err(format!(
+                    r#"Non-ASCII character "{character}" found at index {inx}"#
+                ));
+            }
         }
-        result
+        Ok(result)
     }
 }
 
-impl From<&String> for AsciiString {
-    fn from(value: &String) -> Self {
+// impl From<&String> for AsciiString {
+//     fn from(value: &String) -> Self {
+//         let mut result = Self::with_capacity(value.len());
+//         for character in value.chars() {
+//             result.bytes.push_back(character.ascii_ord_unchecked());
+//         }
+//         result
+//     }
+// }
+
+impl TryFrom<&String> for AsciiString {
+    type Error = String;
+
+    fn try_from(value: &String) -> Result<Self, Self::Error> {
         let mut result = Self::with_capacity(value.len());
-        for character in value.chars() {
-            result.bytes.push_back(character.ascii_ord_unchecked());
+        for (inx, character) in value.chars().enumerate() {
+            if let Some(character) = character.ascii_ord() {
+                result.bytes.push_back(character);
+            } else {
+                return Err(format!(
+                    r#"Non-ASCII character "{character}" found at index {inx}"#
+                ));
+            }
         }
-        result
+        Ok(result)
     }
 }
 
@@ -395,11 +879,65 @@ impl From<AsciiString> for VecDeque<char> {
     }
 }
 
-impl From<char> for AsciiString {
-    fn from(value: char) -> Self {
-        let mut result = Self::with_capacity(1);
-        result.bytes.push_back(value.ascii_ord_unchecked());
+impl From<VecDeque<u8>> for AsciiString {
+    fn from(value: VecDeque<u8>) -> Self {
+        Self { bytes: value }
+    }
+}
+
+impl From<Vec<u8>> for AsciiString {
+    fn from(value: Vec<u8>) -> Self {
+        Self {
+            bytes: value.into(),
+        }
+    }
+}
+
+impl From<&[u8]> for AsciiString {
+    fn from(value: &[u8]) -> Self {
+        let mut result = Self::with_capacity(value.len());
+        result.bytes.extend(value.iter().copied());
         result
+    }
+}
+
+// impl From<char> for AsciiString {
+//     fn from(value: char) -> Self {
+//         let mut result = Self::with_capacity(1);
+//         result.bytes.push_back(value.ascii_ord_unchecked());
+//         result
+//     }
+// }
+
+impl TryFrom<char> for AsciiString {
+    type Error = String;
+
+    fn try_from(value: char) -> Result<Self, Self::Error> {
+        let mut result = Self::with_capacity(1);
+
+        if let Some(character) = value.ascii_ord() {
+            result.bytes.push_back(character);
+        } else {
+            return Err(format!(r#"Non-ASCII character "{value}" found"#));
+        }
+
+        Ok(result)
+    }
+}
+
+impl TryFrom<&char> for AsciiString {
+    type Error = String;
+
+    fn try_from(value: &char) -> Result<Self, Self::Error> {
+        let mut result = Self::with_capacity(1);
+
+        if let Some(character) = value.ascii_ord() {
+            result.bytes.push_back(character);
+        } else {
+            return Err(format!(r#"Non-ASCII character "{value}" found"#));
+        }
+
+        Ok(result)
     }
 }
 
@@ -450,14 +988,16 @@ impl<'de> Deserialize<'de> for AsciiString {
     // }
     fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
         let string = String::deserialize(deserializer)?;
-        Ok(Self::from(string))
+        //Ok(Self::try_from(string)?)
+        Self::try_from(string)
     }
 }
 
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::ascii_traits::*;
+    use crate::ascii_group::AsciiGroup;
+
     #[test]
     fn test_add_ascii_string() {
         use crate::ascii_string::AsciiString;
@@ -512,7 +1052,7 @@ mod test {
     fn test_from_string() {
         use crate::ascii_string::AsciiString;
         let string = String::from("ABC");
-        let result = AsciiString::from(&string);
+        let result = AsciiString::try_from(&string).unwrap();
         assert_eq!(result.bytes.len(), 3);
         assert_eq!(result.bytes[0], 65);
         assert_eq!(result.bytes[1], 66);
@@ -523,7 +1063,7 @@ mod test {
     fn test_from_str() {
         use crate::ascii_string::AsciiString;
         let string = "ABC";
-        let result = AsciiString::from(string);
+        let result = AsciiString::try_from(string).unwrap();
         assert_eq!(result.bytes.len(), 3);
         assert_eq!(result.bytes[0], 65);
         assert_eq!(result.bytes[1], 66);
@@ -544,7 +1084,6 @@ mod test {
     }
 
     #[test]
-    #[should_panic]
     fn test_try_from_str_err() {
         use crate::ascii_string::AsciiString;
         let string = "ABC€";
@@ -592,12 +1131,12 @@ mod test {
     #[test]
     fn test_add_assign_various() {
         use crate::ascii_string::AsciiString;
-        let mut string = AsciiString::with_capacity(3);
+        let mut string = AsciiString::new();
         string += 'A';
         string += 66;
         string += "C";
         string += "DEF";
-        let mut string2 = AsciiString::from(&string);
+        let string2 = AsciiString::from(&string);
         string += string2;
         assert_eq!(&string.to_string(), "ABCDEFABCDEF");
     }
@@ -606,7 +1145,7 @@ mod test {
     fn test_sort() {
         use crate::ascii_string::AsciiString;
         let mut string = AsciiString::with_capacity(3);
-        string = "CBA".into();
+        string += "CBA";
         string.sort();
         assert_eq!(&string.to_string(), "ABC");
     }
@@ -615,7 +1154,7 @@ mod test {
     fn test_index() {
         use crate::ascii_string::AsciiString;
         let mut string = AsciiString::with_capacity(3);
-        string = "ABC".into();
+        string += "ABC";
         assert_eq!(string[0], 65);
         assert_eq!(string[1], 66);
         assert_eq!(string[2], 67);
@@ -625,7 +1164,7 @@ mod test {
     fn test_index_mut() {
         use crate::ascii_string::AsciiString;
         let mut string = AsciiString::with_capacity(3);
-        string = "ABC".into();
+        string += "ABC";
         string[0] = 'D'.ascii_ord_unchecked();
         string[1] = 'E'.ascii_ord_unchecked();
         string[2] = 'F'.ascii_ord_unchecked();
@@ -638,9 +1177,9 @@ mod test {
     fn test_equals() {
         use crate::ascii_string::AsciiString;
         let mut string = AsciiString::with_capacity(3);
-        string = "ABC".into();
+        string += "ABC";
         let mut string2 = AsciiString::with_capacity(3);
-        string2 = "ABC".into();
+        string2 += "ABC";
         assert_eq!(string, string2);
     }
 
@@ -648,21 +1187,51 @@ mod test {
     fn test_equals_string() {
         use crate::ascii_string::AsciiString;
         let mut string = AsciiString::with_capacity(3);
-        string = "ABC".into();
+        string += "ABC";
         let string2: String = "ABC".to_string();
         let r = string2 == string.to_string();
         assert!(r);
     }
 
     #[test]
+    fn test_contains() {
+        use crate::ascii_string::AsciiString;
+        let mut string = AsciiString::with_capacity(3);
+        string += "ABC";
+        assert!(string.contains('A'));
+        assert!(string.contains('B'));
+        assert!(string.contains('C'));
+        assert!(!string.contains('D'));
+    }
+
+    #[test]
     fn test_iter_mut() {
         use crate::ascii_string::AsciiString;
         let mut string = AsciiString::with_capacity(3);
-        string = "ABC".into();
+        string += "ABC";
         for c in string.iter_mut() {
             *c = 'D'.ascii_ord_unchecked();
         }
         assert_eq!(&string.to_string(), "DDD");
+    }
+
+    #[test]
+    fn test_ascii_group_iter() {
+        use crate::ascii_string::AsciiString;
+        let mut string = AsciiString::with_capacity(256);
+        for i in 0..=255 {
+            string += i;
+        }
+
+        let mut c = 0u8;
+        for x in string.iter_ascii_group() {
+            assert_eq!(x.as_byte(), c);
+            assert_eq!(x.as_char(), c.to_ascii_char());
+
+            if c < 255 {
+                c += 1;
+            }
+        }
     }
 
     #[cfg(feature = "serde")]

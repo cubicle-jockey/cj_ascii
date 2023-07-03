@@ -1,19 +1,13 @@
-mod ascii_consts;
-mod ascii_string;
-mod ascii_traits;
-mod ascii_translators;
+pub mod ascii_consts;
+pub mod ascii_group;
+pub mod ascii_string;
+pub mod ascii_traits;
+pub mod ascii_translators;
 
-pub fn add(left: usize, right: usize) -> usize {
-    left + right
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
-    }
+pub mod prelude {
+    pub use crate::ascii_consts::*;
+    pub use crate::ascii_group::*;
+    pub use crate::ascii_string::*;
+    pub use crate::ascii_traits::*;
+    pub use crate::ascii_translators::*;
 }
