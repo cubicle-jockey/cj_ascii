@@ -1,3 +1,5 @@
+use std::ops::RangeInclusive;
+
 // 0x00 - 0x1F: control characters
 pub const NULL: u8 = 0x00;
 pub const SOH: u8 = 0x01;
@@ -258,3 +260,11 @@ pub const LATIN_SMALL_LETTER_U_WITH_DIAERESIS: u8 = 0xFC;
 pub const LATIN_SMALL_LETTER_Y_WITH_ACUTE: u8 = 0xFD;
 pub const LATIN_SMALL_LETTER_THORN: u8 = 0xFE;
 pub const LATIN_SMALL_LETTER_Y_WITH_DIAERESIS: u8 = 0xFF;
+
+// there is some overlap and gaps between some of these. Some ctrl chars are printable, and the ctrl char DEL falls after the printable range.
+// Some extended ASCII chars are also printable, but are going to be treated as non-printable for the purposes of this crate.
+pub const ASCII_CTRL_RANGE: RangeInclusive<u8> = NULL..=US;
+pub const ASCII_CTRL_PRINTABLES: [u8; 3] = [HT, LF, CR];
+pub const ASCII_PRINTABLE_RANGE: RangeInclusive<u8> = SPACE..=TILDE;
+// DEL is not included in ASCII_PRINTABLE_RANGE
+pub const ASCII_EXTENDED_RANGE: RangeInclusive<u8> = EXT_128..=LATIN_SMALL_LETTER_Y_WITH_DIAERESIS;
