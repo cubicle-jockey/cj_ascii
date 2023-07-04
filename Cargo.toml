@@ -2,6 +2,12 @@
 name = "cj_ascii"
 version = "0.1.0"
 edition = "2021"
+description = "A library for working with ASCII strings in Rust"
+keywords = ["ascii", "strings", "serialization"]
+categories = ["encoding", "parsing"]
+repository = "https://github.com/cubicle-jockey/cj_ascii"
+homepage = "https://github.com/cubicle-jockey/cj_ascii"
+license = "MIT OR Apache-2.0"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [lib]
