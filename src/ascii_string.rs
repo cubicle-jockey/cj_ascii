@@ -5,7 +5,7 @@ use std::collections::vec_deque::{Iter, IterMut};
 use std::collections::VecDeque;
 use std::fmt;
 use std::fmt::{Debug, Display, Formatter};
-use std::io::Read;
+use std::io::{Read, Write};
 use std::iter::Map;
 use std::ops::{Add, AddAssign, Index, IndexMut};
 
@@ -457,6 +457,7 @@ impl AsciiString {
     /// astring += "ABC";
     /// let mut buf = [0u8; 3];
     /// let result = astring.read(&mut buf);
+    ///
     /// assert!(result.is_ok());
     /// assert_eq!(result.unwrap(), 3);
     /// assert_eq!(buf, [65, 66, 67]);
@@ -467,6 +468,22 @@ impl AsciiString {
     pub fn read(&mut self, buf: &mut [u8]) -> Result<usize, std::io::Error> {
         self.bytes.make_contiguous();
         self.bytes.read(buf)
+    }
+    /// Writes buf into the `AsciiString`, returning the number of bytes written.
+    /// # Example
+    /// ```
+    /// # use cj_ascii::prelude::*;
+    /// let mut string = AsciiString::new();
+    /// let buf = [65, 66, 67];
+    /// let result = string.write(&buf);
+    ///
+    /// assert!(result.is_ok());
+    /// assert_eq!(result.unwrap(), 3);
+    /// assert_eq!(string.as_bytes(), [65, 66, 67]);
+    /// assert_eq!(string.len(), 3);
+    /// ```
+    pub fn write(&mut self, buf: &[u8]) -> Result<usize, std::io::Error> {
+        self.bytes.write(buf)
     }
     /// Sorts the `AsciiString` in place.
     /// # Example
@@ -1365,6 +1382,18 @@ mod test {
         assert_eq!(buf, [65, 66, 67, 0]);
         assert_eq!(string.as_bytes(), []);
         assert_eq!(string.len(), 0);
+    }
+
+    #[test]
+    fn test_write() {
+        use crate::ascii_string::AsciiString;
+        let mut string = AsciiString::new();
+        let buf = [65, 66, 67];
+        let result = string.write(&buf);
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), 3);
+        assert_eq!(string.as_bytes(), [65, 66, 67]);
+        assert_eq!(string.len(), 3);
     }
 
     #[test]
