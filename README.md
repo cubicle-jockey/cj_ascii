@@ -1,5 +1,10 @@
 # cj_ascii
 
+[![Rust](https://github.com/cubicle-jockey/cj_ascii/actions/workflows/rust.yml/badge.svg)](https://github.com/cubicle-jockey/cj_ascii/actions/workflows/rust.yml)
+[![Dependency Review](https://github.com/cubicle-jockey/cj_ascii/actions/workflows/dependency-review.yml/badge.svg)](https://github.com/cubicle-jockey/cj_ascii/actions/workflows/dependency-review.yml)
+[![Crate](https://img.shields.io/crates/v/cj_ascii.svg)](https://crates.io/crates/cj_ascii)
+[![API](https://docs.rs/cj_ascii/badge.svg)](https://docs.rs/cj_ascii)
+
 A library for working with ASCII strings in Rust
 
 AsciiString is a String like struct for working with ASCII and Extended ASCII characters.
