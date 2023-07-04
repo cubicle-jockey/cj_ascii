@@ -1,9 +1,22 @@
 # cj_ascii
 
-A String like struct that contains ASCII and Extended ASCII characters.
+A library for working with ASCII strings in Rust
+
+AsciiString is a String like struct for working with ASCII and Extended ASCII characters.
 <br>
 Because it accepts Extended ASCII, all u8 values are accepted.
+
+Key features:
+```text
+* TryFrom traits have been implemented for string types.
+* push/pop push_front/pop_front have been implemented for both char and u8.
+* u8 (ascii ordinals) can be accessed by index and updated directly. 
+* Concatenation of char, u8, &str and AsciiString is supported (will panic if char/string is not valid ASCII).
+* Iterators for both u8 and char.
+* raw bytes via as_bytes() and as_bytes_mut(), where the bytes are guaranteed to be valid ASCII (one byte = one char).
+```
 # samples
+basic example
 ```rust
 fn main() {
     use cj_ascii::prelude::*;
@@ -66,7 +79,8 @@ fn main() {
     assert_eq!(astring.to_string(), "GHIJKL");
 }
 ```
-Iteration
+Iter
+* user iter() to iterate over the raw bytes.
 ```rust
 fn main() {
     use cj_ascii::prelude::*;
@@ -91,7 +105,8 @@ fn main() {
     assert_eq!(iter.next(), None);
 }
 ```
-Iteration Mut
+Iter Mut
+* user iter_mut() to iterate over and modify the raw bytes.
 ```rust
 fn main() {
     use cj_ascii::prelude::*;
@@ -105,6 +120,7 @@ fn main() {
 }
 ```
 Iter Ascii
+* use iter_ascii() to iterate as chars.
 ```rust
 fn main() {
     use cj_ascii::prelude::*;
@@ -121,6 +137,11 @@ fn main() {
 }
 ```
 Iter AsciiGroup
+* AsciiGroup is an enum that represents the different categories of ASCII characters.
+  * PrintableCtrl - ASCII characters that are printable control characters.
+  * NonPrintableCtrl - ASCII characters that are non-printable control characters.
+  * Printable - ASCII characters that are printable (space through tilda).
+  * Extended - ASCII characters in the extended ascii range (ordinal 80 through 255).
 ```rust
 fn main() {
     use cj_ascii::prelude::*;
@@ -135,7 +156,9 @@ fn main() {
     }
 }
 ```
-Push
+Push (char or u8)
+* u8 values are pushed as is and will never fail.
+* char values will panic if they are not ASCII.
 ```rust
 fn main() {
     use cj_ascii::prelude::*;
@@ -151,7 +174,7 @@ fn main() {
     assert_eq!(astring.to_string(), "XYZABCD");
 }
 ```
-Try Push
+Try Push (char or u8)
 ```rust
 fn main() {
     use cj_ascii::prelude::*;
@@ -173,6 +196,8 @@ fn main() {
 }
 ```
 Push str
+* use push_str if you know the string only contains ascii.
+* push_str will panic if the string contains non-ascii characters.
 ```rust
 fn main() {
     use cj_ascii::prelude::*;
@@ -183,6 +208,7 @@ fn main() {
 }
 ```
 Push str Lossy
+* push_str_lossy will replace non-ascii characters with a space.
 ```rust
 fn main() {
     use cj_ascii::prelude::*;
@@ -193,6 +219,7 @@ fn main() {
 }
 ```
 Invalid Ascii
+* try_from will return an error if the string contains non-ascii characters.
 ```rust
 fn main() {
     use cj_ascii::prelude::*;
