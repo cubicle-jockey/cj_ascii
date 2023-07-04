@@ -4,13 +4,16 @@ version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
-[[bin]]
+[lib]
 name = "cj_ascii"
-path = "src/main.rs"
+path = "src/lib.rs"
+
+#[[bin]]
+#name = "cj_ascii"
+#path = "src/_main.rs"
 
 # these flags provide the best performance possible, resulting in AnsiString methods that are roughly 2x faster than the String equivalents
-[profile.release]  # main.rs testing
+[profile.release]  # _main testing
 lto = true         # huge performance boost (for some methods)
 opt-level = 3      # default
 debug = false      # default
@@ -23,7 +26,7 @@ codegen-units = 1  # huge performance boost, especially for closures
 serde = { version = "1.0", features = ["derive"], optional = true }
 
 [features]
-default = ["serde"]
+default = []
 serialize = ["serde"]
 
 [dev-dependencies]

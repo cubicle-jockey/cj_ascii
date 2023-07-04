@@ -189,12 +189,14 @@ pub struct AsciiString {
 
 impl AsciiString {
     /// Creates a new empty `AsciiString` with the given capacity.
+    #[inline]
     pub fn with_capacity(capacity: usize) -> Self {
         Self {
             bytes: VecDeque::with_capacity(capacity),
         }
     }
     /// Creates a new empty `AsciiString`.
+    #[inline]
     pub fn new() -> Self {
         Self::default()
     }
@@ -397,6 +399,7 @@ impl AsciiString {
         *self += string;
     }
     /// Clears the `AsciiString`, removing all bytes.
+    #[inline]
     pub fn clear(&mut self) {
         self.bytes.clear();
     }
@@ -405,6 +408,7 @@ impl AsciiString {
         self.bytes.truncate(len);
     }
     /// Returns the capacity of the `AsciiString` in bytes.
+    #[inline]
     pub fn capacity(&self) -> usize {
         self.bytes.capacity()
     }
@@ -428,17 +432,28 @@ impl AsciiString {
     pub fn shrink_to(&mut self, min_capacity: usize) {
         self.bytes.shrink_to(min_capacity);
     }
-    /// Returns a byte slice of the `AsciiString`.
+    /// Returns a byte slice of the raw `AsciiString`.
+    ///
+    /// * Each byte represents a single char.
     pub fn as_bytes(&mut self) -> &[u8] {
         self.bytes.make_contiguous();
         self.bytes.as_slices().0
     }
-    /// Returns a mutable byte slice of the `AsciiString`.
+    /// Returns a mutable byte slice of the raw `AsciiString`.
+    ///
+    /// * Each byte represents a single char.
     pub fn as_bytes_mut(&mut self) -> &mut [u8] {
         self.bytes.make_contiguous();
         self.bytes.as_mut_slices().0
     }
     /// Sorts the `AsciiString` in place.
+    /// # Example
+    /// ```
+    /// # use cj_ascii::prelude::*;
+    /// let mut astring = AsciiString::try_from("DCBA").unwrap();
+    /// astring.sort();
+    /// assert_eq!(astring.to_string(), "ABCD");
+    /// ```
     pub fn sort(&mut self) {
         self.bytes.make_contiguous().sort_unstable();
     }
@@ -563,13 +578,14 @@ impl AsciiString {
 
 impl Index<usize> for AsciiString {
     type Output = u8;
-
+    #[inline]
     fn index(&self, index: usize) -> &Self::Output {
         &self.bytes[index]
     }
 }
 
 impl IndexMut<usize> for AsciiString {
+    #[inline]
     fn index_mut(&mut self, index: usize) -> &mut Self::Output {
         &mut self.bytes[index]
     }
@@ -579,6 +595,7 @@ impl Add<AsciiString> for AsciiString {
     type Output = Self;
 
     /// Concatenates two `AsciiString`s.
+    #[inline(always)]
     fn add(mut self, rhs: AsciiString) -> Self::Output {
         self.bytes.extend(rhs.bytes);
         self
@@ -589,6 +606,7 @@ impl Add<&AsciiString> for AsciiString {
     type Output = Self;
 
     /// Concatenates two `AsciiString`s.
+    #[inline(always)]
     fn add(mut self, rhs: &AsciiString) -> Self::Output {
         self.bytes.extend(rhs.bytes.clone());
         self
@@ -601,6 +619,7 @@ impl Add<String> for AsciiString {
     /// Concatenates an `AsciiString` and a `String`.
     /// # Panics
     /// Panics if the `String` contains non-ASCII/Extended ASCII characters.
+    #[inline(always)]
     fn add(mut self, rhs: String) -> Self::Output {
         let rhs: Self = rhs.try_into().unwrap();
         self.bytes.extend(rhs.bytes);
@@ -614,6 +633,7 @@ impl Add<&String> for AsciiString {
     /// Concatenates an `AsciiString` and a `&String`.
     /// # Panics
     /// Panics if the `String` contains non-ASCII/Extended ASCII characters.
+    #[inline(always)]
     fn add(mut self, rhs: &String) -> Self::Output {
         let rhs: Self = rhs.try_into().unwrap();
         self.bytes.extend(rhs.bytes);
@@ -627,6 +647,7 @@ impl Add<&str> for AsciiString {
     /// Concatenates an `AsciiString` and a `&str`.
     /// # Panics
     /// Panics if the `str` contains non-ASCII/Extended ASCII characters.
+    #[inline(always)]
     fn add(mut self, rhs: &str) -> Self::Output {
         let rhs: Self = rhs.try_into().unwrap();
         self.bytes.extend(rhs.bytes);
@@ -639,6 +660,7 @@ impl Add<char> for AsciiString {
     /// Concatenates an `AsciiString` and a `char`.
     /// # Panics
     /// Panics if the `char` is not ASCII/Extended ASCII.
+    #[inline(always)]
     fn add(mut self, rhs: char) -> Self::Output {
         self.bytes.push_back(rhs.ascii_ord_unchecked());
         self
@@ -650,6 +672,7 @@ impl Add<&char> for AsciiString {
     /// Concatenates an `AsciiString` and a `&char`.
     /// # Panics
     /// Panics if the `char` is not ASCII/Extended ASCII.
+    #[inline(always)]
     fn add(mut self, rhs: &char) -> Self::Output {
         self.bytes.push_back(rhs.ascii_ord_unchecked());
         self
@@ -657,12 +680,14 @@ impl Add<&char> for AsciiString {
 }
 
 impl AddAssign<AsciiString> for AsciiString {
+    #[inline(always)]
     fn add_assign(&mut self, rhs: AsciiString) {
         self.bytes.extend(rhs.bytes);
     }
 }
 
 impl AddAssign<&AsciiString> for AsciiString {
+    #[inline(always)]
     fn add_assign(&mut self, rhs: &AsciiString) {
         self.bytes.extend(rhs.bytes.clone());
     }
@@ -672,6 +697,7 @@ impl AddAssign<&str> for AsciiString {
     /// Concatenates an `AsciiString` and a `&str`.
     /// # Panics
     /// Panics if the `str` contains non-ASCII/Extended ASCII characters.
+    #[inline(always)]
     fn add_assign(&mut self, rhs: &str) {
         let rhs = AsciiString::try_from(rhs).unwrap();
         self.bytes.extend(rhs.bytes);
@@ -682,6 +708,7 @@ impl AddAssign<String> for AsciiString {
     /// Concatenates an `AsciiString` and a `String`.
     /// # Panics
     /// Panics if the `String` contains non-ASCII/Extended ASCII characters.
+    #[inline(always)]
     fn add_assign(&mut self, rhs: String) {
         let rhs = AsciiString::try_from(rhs).unwrap();
         self.bytes.extend(rhs.bytes);
@@ -692,6 +719,7 @@ impl AddAssign<char> for AsciiString {
     /// Concatenates an `AsciiString` and a `char`.
     /// # Panics
     /// Panics if the `char` is not ASCII/Extended ASCII.
+    #[inline(always)]
     fn add_assign(&mut self, rhs: char) {
         self.bytes.push_back(rhs.ascii_ord_unchecked());
     }
@@ -701,12 +729,14 @@ impl AddAssign<&char> for AsciiString {
     /// Concatenates an `AsciiString` and a `&char`.
     /// # Panics
     /// Panics if the `char` is not ASCII/Extended ASCII.
+    #[inline(always)]
     fn add_assign(&mut self, rhs: &char) {
         self.bytes.push_back(rhs.ascii_ord_unchecked());
     }
 }
 
 impl AddAssign<u8> for AsciiString {
+    #[inline(always)]
     fn add_assign(&mut self, rhs: u8) {
         self.bytes.push_back(rhs);
     }
@@ -854,6 +884,7 @@ impl From<&AsciiString> for Vec<u8> {
 }
 
 impl From<AsciiString> for Vec<u8> {
+    #[inline]
     fn from(value: AsciiString) -> Self {
         value.bytes.into()
     }
@@ -866,6 +897,7 @@ impl From<&AsciiString> for VecDeque<u8> {
 }
 
 impl From<AsciiString> for VecDeque<u8> {
+    #[inline]
     fn from(value: AsciiString) -> Self {
         value.bytes
     }
@@ -912,12 +944,14 @@ impl From<AsciiString> for VecDeque<char> {
 }
 
 impl From<VecDeque<u8>> for AsciiString {
+    #[inline]
     fn from(value: VecDeque<u8>) -> Self {
         Self { bytes: value }
     }
 }
 
 impl From<Vec<u8>> for AsciiString {
+    #[inline]
     fn from(value: Vec<u8>) -> Self {
         Self {
             bytes: value.into(),

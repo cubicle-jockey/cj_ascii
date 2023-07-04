@@ -142,4 +142,20 @@ fn perf_test() {
         let end = start.elapsed().as_millis();
         println!("AnsiByte to/from {z_count} z's found in {end} ms",);
     }
+    {
+        let start = std::time::Instant::now();
+        let mut z_count = 0;
+        for b in ascii_string.iter_ascii_group() {
+            match b {
+                AsciiGroup::Printable(x) => {
+                    if x == b'z' {
+                        z_count += 1;
+                    }
+                }
+                _ => {}
+            }
+        }
+        let end = start.elapsed().as_millis();
+        println!("AnsiGroup: for b in iter_ascii_group() {z_count} z's found in {end} ms",);
+    }
 }

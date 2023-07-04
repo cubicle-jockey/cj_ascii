@@ -1,19 +1,19 @@
 use crate::ascii_consts::*;
 
 /// Returns the character represented by the ASCII ordinal value.
-#[inline]
+#[inline(always)]
 pub const fn ascii_ord_to_char(o: u8) -> char {
     o as char
 }
 
 /// Returns the character represented by the ASCII ordinal value.
-#[inline]
+#[inline(always)]
 pub const fn ascii_ord_ref_to_char(o: &u8) -> char {
     ascii_ord_to_char(*o)
 }
 
 /// Returns the ASCII ordinal value represented by the character, or `None` if the character is not ASCII.
-#[inline]
+#[inline(always)]
 pub const fn char_to_ascii_ord(c: char) -> Option<u8> {
     match c {
         '\u{0000}' => Some(NULL),
@@ -277,7 +277,7 @@ pub const fn char_to_ascii_ord(c: char) -> Option<u8> {
 }
 
 /// Returns the ASCII ordinal value represented by the character, or `None` if the character is not ASCII.
-#[inline]
+#[inline(always)]
 pub const fn char_ref_to_ascii_ord(c: &char) -> Option<u8> {
     char_to_ascii_ord(*c)
 }

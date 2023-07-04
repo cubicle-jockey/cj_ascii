@@ -11,9 +11,9 @@ pub enum AsciiGroup {
     Extended(u8),
 }
 impl AsciiGroup {
-    #[inline]
+    #[inline(always)]
     pub fn new(c: &u8) -> Self {
-        if ASCII_CTRL_PRINTABLES.binary_search(c).is_ok() {
+        if ASCII_CTRL_PRINTABLES.contains(c) {
             Self::PrintableCtrl(*c)
         } else if ASCII_PRINTABLE_RANGE.contains(c) {
             Self::Printable(*c)
@@ -23,7 +23,8 @@ impl AsciiGroup {
             Self::NonPrintableCtrl(*c)
         }
     }
-    #[inline]
+
+    #[inline(always)]
     pub const fn as_byte(&self) -> u8 {
         match self {
             AsciiGroup::NonPrintableCtrl(v) => *v,
@@ -32,9 +33,25 @@ impl AsciiGroup {
             AsciiGroup::Extended(v) => *v,
         }
     }
-    #[inline]
+    #[inline(always)]
     pub const fn as_char(&self) -> char {
         ascii_ord_to_char(self.as_byte())
+    }
+    #[inline(always)]
+    pub fn is_non_printable_ctrl(&self) -> bool {
+        matches!(self, AsciiGroup::NonPrintableCtrl(_))
+    }
+    #[inline(always)]
+    pub fn is_printable_ctrl(&self) -> bool {
+        matches!(self, AsciiGroup::PrintableCtrl(_))
+    }
+    #[inline(always)]
+    pub fn is_printable(&self) -> bool {
+        matches!(self, AsciiGroup::Printable(_))
+    }
+    #[inline(always)]
+    pub fn is_extended(&self) -> bool {
+        matches!(self, AsciiGroup::Extended(_))
     }
 }
 
@@ -51,7 +68,7 @@ impl AsciiGroupIter<'_> {
 impl Iterator for AsciiGroupIter<'_> {
     type Item = AsciiGroup;
 
-    #[inline]
+    #[inline(always)]
     fn next(&mut self) -> Option<Self::Item> {
         self.inner.next().map(AsciiGroup::new)
     }
