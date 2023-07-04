@@ -141,7 +141,7 @@ Iter AsciiGroup
   * PrintableCtrl - ASCII characters that are printable control characters.
   * NonPrintableCtrl - ASCII characters that are non-printable control characters.
   * Printable - ASCII characters that are printable (space through tilda).
-  * Extended - ASCII characters in the extended ascii range (ordinal 80 through 255).
+  * Extended - ASCII characters in the extended ascii range (ordinal 128 through 255).
 ```rust
 fn main() {
     use cj_ascii::prelude::*;
