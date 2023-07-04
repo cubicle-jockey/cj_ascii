@@ -5,6 +5,7 @@ use std::collections::vec_deque::{Iter, IterMut};
 use std::collections::VecDeque;
 use std::fmt;
 use std::fmt::{Debug, Display, Formatter};
+use std::io::{Read, Write};
 use std::iter::Map;
 use std::ops::{Add, AddAssign, Index, IndexMut};
 
@@ -445,6 +446,44 @@ impl AsciiString {
     pub fn as_bytes_mut(&mut self) -> &mut [u8] {
         self.bytes.make_contiguous();
         self.bytes.as_mut_slices().0
+    }
+
+    /// Fills buf with the contents of the `AsciiString`, returning the number of bytes read.
+    /// * this consumes the bytes read from the `AsciiString`.
+    /// # Example
+    ///```
+    /// # use cj_ascii::prelude::*;
+    /// let mut astring = AsciiString::new();
+    /// astring += "ABC";
+    /// let mut buf = [0u8; 3];
+    /// let result = astring.read(&mut buf);
+    ///
+    /// assert!(result.is_ok());
+    /// assert_eq!(result.unwrap(), 3);
+    /// assert_eq!(buf, [65, 66, 67]);
+    /// // astring is now empty
+    /// assert_eq!(astring.as_bytes(), []);
+    /// assert_eq!(astring.len(), 0);
+    /// ```
+    pub fn read(&mut self, buf: &mut [u8]) -> Result<usize, std::io::Error> {
+        self.bytes.make_contiguous();
+        self.bytes.read(buf)
+    }
+    /// Writes buf into the `AsciiString`, returning the number of bytes written.
+    /// # Example
+    /// ```
+    /// # use cj_ascii::prelude::*;
+    /// let mut string = AsciiString::new();
+    /// let buf = [65, 66, 67];
+    /// let result = string.write(&buf);
+    ///
+    /// assert!(result.is_ok());
+    /// assert_eq!(result.unwrap(), 3);
+    /// assert_eq!(string.as_bytes(), [65, 66, 67]);
+    /// assert_eq!(string.len(), 3);
+    /// ```
+    pub fn write(&mut self, buf: &[u8]) -> Result<usize, std::io::Error> {
+        self.bytes.write(buf)
     }
     /// Sorts the `AsciiString` in place.
     /// # Example
@@ -1285,6 +1324,76 @@ mod test {
         assert!(string.contains('B'));
         assert!(string.contains('C'));
         assert!(!string.contains('D'));
+    }
+
+    #[test]
+    fn test_read() {
+        use crate::ascii_string::AsciiString;
+        let mut string = AsciiString::new();
+        string += "ABC";
+        let mut buf = [0u8; 3];
+        let result = string.read(&mut buf);
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), 3);
+        assert_eq!(buf, [65, 66, 67]);
+        assert_eq!(string.as_bytes(), []);
+        assert_eq!(string.len(), 0);
+    }
+
+    #[test]
+    fn test_read_undersized() {
+        use crate::ascii_string::AsciiString;
+        let mut string = AsciiString::new();
+        string += "ABC";
+        let mut buf = [0u8; 2];
+        let result = string.read(&mut buf);
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), 2);
+        assert_eq!(buf, [65, 66]);
+        assert_eq!(string.as_bytes(), [67]);
+        assert_eq!(string.len(), 1);
+
+        buf.fill(0);
+        let result = string.read(&mut buf);
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), 1);
+        assert_eq!(buf, [67, 0]);
+        assert_eq!(string.as_bytes(), []);
+        assert_eq!(string.len(), 0);
+
+        buf.fill(0);
+        let result = string.read(&mut buf);
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), 0);
+        assert_eq!(buf, [0, 0]);
+        assert_eq!(string.as_bytes(), []);
+        assert_eq!(string.len(), 0);
+    }
+
+    #[test]
+    fn test_read_oversized() {
+        use crate::ascii_string::AsciiString;
+        let mut string = AsciiString::new();
+        string += "ABC";
+        let mut buf = [0u8; 4];
+        let result = string.read(&mut buf);
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), 3);
+        assert_eq!(buf, [65, 66, 67, 0]);
+        assert_eq!(string.as_bytes(), []);
+        assert_eq!(string.len(), 0);
+    }
+
+    #[test]
+    fn test_write() {
+        use crate::ascii_string::AsciiString;
+        let mut string = AsciiString::new();
+        let buf = [65, 66, 67];
+        let result = string.write(&buf);
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), 3);
+        assert_eq!(string.as_bytes(), [65, 66, 67]);
+        assert_eq!(string.len(), 3);
     }
 
     #[test]
