@@ -185,7 +185,7 @@ use std::ops::{Add, AddAssign, Index, IndexMut};
 
 #[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
 pub struct AsciiString {
-    bytes: VecDeque<u8>,
+    pub(crate) bytes: VecDeque<u8>,
 }
 
 impl AsciiString {
@@ -482,6 +482,7 @@ impl AsciiString {
     /// assert_eq!(string.as_bytes(), [65, 66, 67]);
     /// assert_eq!(string.len(), 3);
     /// ```
+    #[inline]
     pub fn write(&mut self, buf: &[u8]) -> Result<usize, std::io::Error> {
         self.bytes.write(buf)
     }
