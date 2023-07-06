@@ -399,6 +399,11 @@ impl AsciiString {
     pub fn push_ascii_string(&mut self, string: &AsciiString) {
         *self += string;
     }
+
+    /// Pushes a slice of bytes onto the end of the `AsciiString`.
+    pub fn push_bytes(&mut self, bytes: &[u8]) {
+        self.bytes.extend(bytes);
+    }
     /// Clears the `AsciiString`, removing all bytes.
     #[inline]
     pub fn clear(&mut self) {
@@ -436,6 +441,8 @@ impl AsciiString {
     /// Returns a byte slice of the raw `AsciiString`.
     ///
     /// * Each byte represents a single char.
+    /// # note
+    /// * a mutable reference is required, but only to make the memory contiguous (if not contiguous already).
     pub fn as_bytes(&mut self) -> &[u8] {
         self.bytes.make_contiguous();
         self.bytes.as_slices().0
