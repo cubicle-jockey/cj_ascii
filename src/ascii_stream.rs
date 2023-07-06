@@ -1,5 +1,5 @@
 use crate::ascii_string::AsciiString;
-use std::io::{BufRead, BufReader, Read};
+use std::io::{BufRead, BufReader, BufWriter, IntoInnerError, Read, Write};
 
 /// The result of a call to `AsciiStreamReader::read_line()`.
 #[derive(Debug)]
@@ -42,6 +42,62 @@ impl ReadLineResult {
 }
 
 /// A buffered reader which reads data as ascii characters.
+/// # Sample Usage
+/// ```
+/// use cj_ascii::ascii_stream::*;
+/// use cj_ascii::ascii_string::*;
+/// use std::io::Cursor;
+///
+/// let mut reader = AsciiStreamReader::new(
+///     // the binary data below contains "This is test 1\nThis is test 2\r\nThis is test 3"
+///     Cursor::new(
+///         [84, 104, 105, 115, 32, 105, 115, 32, 116, 101, 115, 116, 32, 49, 10, 84,
+///          104, 105, 115, 32, 105, 115, 32, 116, 101, 115, 116, 32, 50, 13, 10, 84,
+///          104, 105, 115, 32, 105, 115, 32, 116, 101, 115, 116, 32, 51]
+///     )
+/// );
+///
+/// let mut astring = AsciiString::new();
+///
+/// // line 1 is terminated by \n. the \n is discarded.
+/// let result = reader.read_line(&mut astring);
+/// assert!(result.is_success());
+/// assert_eq!(astring.to_string(), "This is test 1");
+///
+/// // line 2 is terminated by \r\n. both are discarded.
+/// let result = reader.read_line(&mut astring);
+/// assert!(result.is_success());
+/// assert_eq!(astring.to_string(), "This is test 2");
+///
+/// // line 3 is the remainder of the data.
+/// let result = reader.read_line(&mut astring);
+/// assert!(result.is_success());
+/// assert_eq!(astring.to_string(), "This is test 3");
+///
+/// // the end of the stream has been reached, so the result is EOF.
+/// let result = reader.read_line(&mut astring);
+/// assert!(result.is_eof());
+/// ```
+/// shorter example with the same data:
+/// ```
+/// # use cj_ascii::ascii_stream::*;
+/// # use cj_ascii::ascii_string::*;
+/// # use std::io::Cursor;
+///
+/// let mut reader = AsciiStreamReader::new(
+///     Cursor::new(
+///         [84, 104, 105, 115, 32, 105, 115, 32, 116, 101, 115, 116, 32, 49, 10, 84,
+///          104, 105, 115, 32, 105, 115, 32, 116, 101, 115, 116, 32, 50, 13, 10, 84,
+///          104, 105, 115, 32, 105, 115, 32, 116, 101, 115, 116, 32, 51]
+///     )
+/// );
+///
+/// let mut astring = AsciiString::new();
+/// while reader.read_line(&mut astring).is_success() {
+///    println!("{}", astring);
+/// }
+/// ```
+#[derive(Debug)]
 pub struct AsciiStreamReader<R> {
     inner: BufReader<R>,
 }
@@ -83,20 +139,6 @@ impl<R: Read> AsciiStreamReader<R> {
             }
             Err(err) => ReadLineResult::Error(err),
         }
-        // if let Ok(result) = result {
-        //     if result > 0 {
-        //         if buf[result - 1] == b'\n' {
-        //             buf.pop();
-        //             if result > 1 && buf[result - 2] == b'\r' {
-        //                 buf.pop();
-        //             }
-        //         }
-        //         return Ok(Success(buf.len()));
-        //     } else {
-        //         return Ok(ReadLineResult::EOF);
-        //     }
-        // }
-        // result
     }
     /// Reads until the specified byte is encountered, or EOF is reached, into the specified AsciiString.
     /// * the specified byte is included in the AsciiString.
@@ -123,7 +165,7 @@ impl<R: Read> AsciiStreamReader<R> {
     /// Reads the specified number of bytes into the specified AsciiString.
     pub fn read_bytes(&mut self, buf: &mut AsciiString, len: usize) -> std::io::Result<usize> {
         buf.clear();
-        let mut vec = Vec::new();
+        let mut vec = Vec::with_capacity(len);
         vec.resize(len, 0);
         let result = self.inner.read(&mut vec);
         if result.is_ok() {
@@ -133,15 +175,108 @@ impl<R: Read> AsciiStreamReader<R> {
     }
 }
 
+/// A buffered writer that writes ascii characters to an underlying stream.
+/// # Sample Usage
+/// ```
+/// # use cj_ascii::ascii_stream::*;
+/// # use cj_ascii::ascii_string::*;
+/// let mut writer = AsciiStreamWriter::new(Vec::new());
+///
+/// let mut astring = AsciiString::new();
+/// astring += "The beginning.";
+/// writer.write_line(&astring).unwrap();
+///
+/// astring.clear();
+/// astring += "The middle.";
+/// writer.write_line(&astring).unwrap();
+///
+/// astring.clear();
+/// astring += "The end.";
+/// writer.write(&astring).unwrap();
+///
+/// let result = writer.flush();
+/// assert!(result.is_ok());
+/// let vec = writer.into_inner().unwrap();
+/// assert_eq!(vec,
+///            [84, 104, 101, 32, 98, 101, 103, 105, 110, 110, 105, 110, 103,
+///             46, 10, 84, 104, 101, 32, 109, 105, 100, 100, 108, 101, 46,
+///             10, 84, 104, 101, 32, 101, 110, 100, 46]
+/// );
+///
+/// let result = AsciiString::from(vec);
+/// assert_eq!(result.to_string(),"The beginning.\nThe middle.\nThe end.");
+/// ```
+
+#[derive(Debug)]
+pub struct AsciiStreamWriter<W: Write> {
+    inner: BufWriter<W>,
+}
+
+impl<W: Write> AsciiStreamWriter<W> {
+    /// Creates a new AsciiStreamWriter with a default 8KB buffer capacity.
+    pub fn new(inner: W) -> Self {
+        Self {
+            inner: BufWriter::new(inner),
+        }
+    }
+    /// Creates a new AsciiStreamWriter with the specified buffer capacity.
+    pub fn with_capacity(capacity: usize, inner: W) -> Self {
+        Self {
+            inner: BufWriter::with_capacity(capacity, inner),
+        }
+    }
+    /// Returns the number of bytes the internal buffer can hold.
+    pub fn capacity(&self) -> usize {
+        self.inner.capacity()
+    }
+    /// Writes the entire AsciiString to the stream.    
+    #[inline]
+    pub fn write(&mut self, buf: &AsciiString) -> std::io::Result<()> {
+        //self.inner.write_all(buf.as_bytes())
+        let (a, b) = buf.bytes.as_slices();
+        let mut result = Ok(());
+        if !a.is_empty() {
+            result = self.inner.write_all(a);
+        }
+        if result.is_ok() && !b.is_empty() {
+            result = self.inner.write_all(b);
+        }
+        result
+    }
+    /// Writes the entire AsciiString to the stream, followed by a newline.   
+    #[inline]
+    pub fn write_line(&mut self, buf: &AsciiString) -> std::io::Result<()> {
+        self.write(buf)?;
+        self.inner.write_all(b"\n")
+    }
+    /// Writes the entire AsciiString to the stream, followed by a carriage return and a newline.    
+    #[inline]
+    pub fn write_line_crlf(&mut self, buf: &AsciiString) -> std::io::Result<()> {
+        self.write(buf)?;
+        self.inner.write_all(b"\r\n")
+    }
+    /// Flushes the internal buffer, writing all buffered bytes to the underlying stream.
+    pub fn flush(&mut self) -> std::io::Result<()> {
+        self.inner.flush()
+    }
+    /// Unwraps this AsciiStreamWriter, returning the underlying writer.
+    /// The buffer is written out before returning the writer
+    pub fn into_inner(self) -> Result<W, IntoInnerError<BufWriter<W>>> {
+        self.inner.into_inner()
+    }
+}
+
 #[cfg(test)]
 mod test {
-    use std::io::Write;
+    use std::io::{Cursor, Write};
 
     #[test]
-    fn test_ascii_stream() {
+    fn test_ascii_stream_reader() {
         use super::*;
-        let vec = b"This is test1\nThis is test2\r\nThis is test3";
-        let mut stream = AsciiStreamReader::new(vec.as_slice());
+
+        let mut stream = AsciiStreamReader::new(Cursor::new(
+            b"This is test1\nThis is test2\r\nThis is test3",
+        ));
         let mut buf = AsciiString::new();
         stream.read_line(&mut buf);
         assert_eq!(buf.to_string(), "This is test1");
@@ -152,5 +287,28 @@ mod test {
         let r = stream.read_line(&mut buf);
         assert_eq!(buf.to_string(), "");
         assert!(r.is_eof());
+    }
+
+    #[test]
+    fn test_ascii_stream_writer() {
+        use super::*;
+
+        let mut stream = AsciiStreamWriter::new(Vec::new());
+        let mut buf = AsciiString::new();
+        buf.push_str("This is test1");
+        stream.write_line(&buf).unwrap();
+
+        buf.clear();
+        buf += "test2";
+        stream.write_line_crlf(&buf).unwrap();
+
+        buf.clear();
+        buf += "test3";
+        stream.write(&buf).unwrap();
+
+        assert_eq!(
+            stream.into_inner().unwrap(),
+            b"This is test1\ntest2\r\ntest3"
+        );
     }
 }
