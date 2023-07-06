@@ -14,6 +14,7 @@
 //! * Concatenation of char, u8, &str and AsciiString is supported (will panic if char/string is not valid ASCII).
 //! * Iterators for both u8 and char.
 //! * raw bytes via as_bytes() and as_bytes_mut(), where the bytes are guaranteed to be valid ASCII (one byte = one char).
+//! * stream support via AsciiStreamReader and AsciiStreamWriter (included in this crate).
 //! ```
 //! # samples
 //! basic example
@@ -228,9 +229,64 @@
 //!     assert!(result.is_err());
 //! }
 //! ```
+//! Streams
+//! * reader
+//! ```rust
+//! fn main() {
+//!     use cj_ascii::prelude::*;
+//!     use std::io::Cursor;
+//!
+//!     let mut reader = AsciiStreamReader::new(
+//!         Cursor::new(
+//!             [84, 104, 105, 115, 32, 105, 115, 32, 116, 101, 115, 116, 32, 49, 10, 84,
+//!              104, 105, 115, 32, 105, 115, 32, 116, 101, 115, 116, 32, 50, 13, 10, 84,
+//!              104, 105, 115, 32, 105, 115, 32, 116, 101, 115, 116, 32, 51]
+//!         )
+//!     );
+//!
+//!     let mut astring = AsciiString::new();
+//!     while reader.read_line(&mut astring).is_success() {
+//!         println!("{}", astring);
+//!     }
+//! }
+//! ```
+//! * writer
+//! ```rust
+//! fn main() {
+//!     use cj_ascii::prelude::*;
+//!
+//!     let mut writer = AsciiStreamWriter::new(Vec::new());
+//!     
+//!     let mut astring = AsciiString::new();
+//!     astring += "The beginning.";
+//!     writer.write_line(&astring).unwrap();
+//!     
+//!     astring.clear();
+//!     astring += "The middle.";
+//!     writer.write_line(&astring).unwrap();
+//!     
+//!     astring.clear();
+//!     astring += "The end.";
+//!     writer.write(&astring).unwrap();
+//!     
+//!     let result = writer.flush();
+//!     assert!(result.is_ok());
+//!   
+//!     let vec = writer.into_inner().unwrap();
+//!     assert_eq!(vec,
+//!                [84, 104, 101, 32, 98, 101, 103, 105, 110, 110, 105, 110, 103,
+//!                 46, 10, 84, 104, 101, 32, 109, 105, 100, 100, 108, 101, 46,
+//!                 10, 84, 104, 101, 32, 101, 110, 100, 46]
+//!     );
+//!     
+//!     let result = AsciiString::from(vec);
+//!     assert_eq!(result.to_string(),"The beginning.\nThe middle.\nThe end.");
+//! }
+//! ```
 
 pub mod ascii_consts;
 pub mod ascii_group;
+pub mod ascii_stream;
 pub mod ascii_string;
 pub mod ascii_traits;
 pub mod ascii_translators;
@@ -238,6 +294,7 @@ pub mod ascii_translators;
 pub mod prelude {
     pub use crate::ascii_consts::*;
     pub use crate::ascii_group::*;
+    pub use crate::ascii_stream::*;
     pub use crate::ascii_string::*;
     pub use crate::ascii_traits::*;
     pub use crate::ascii_translators::*;
