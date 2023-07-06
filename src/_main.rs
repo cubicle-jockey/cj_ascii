@@ -11,6 +11,8 @@ use ascii_string::*;
 use ascii_traits::*;
 mod ascii_group;
 use ascii_group::*;
+mod ascii_stream;
+use ascii_stream::*;
 
 pub fn main() {
     for i in 0..=255 {
@@ -60,13 +62,17 @@ pub fn main() {
     }
 
     perf_test();
+    perf_stream_test();
 }
 
 fn perf_test() {
     let file_name = "C:/Temp/EnglishWords/words_ansi.txt"; // 5 MB file
+    let start = std::time::Instant::now();
     let mut file = std::fs::File::open(file_name).unwrap();
     let mut string = String::new();
     file.read_to_string(&mut string).unwrap();
+    let end = start.elapsed().as_millis();
+    println!("fileload to string took {} ms", end);
 
     let start = std::time::Instant::now();
     let ascii_string: AsciiString = string.as_str().try_into().unwrap();
@@ -157,5 +163,64 @@ fn perf_test() {
         }
         let end = start.elapsed().as_millis();
         println!("AnsiGroup: for b in iter_ascii_group() {z_count} z's found in {end} ms",);
+    }
+}
+
+fn perf_stream_test() {
+    {
+        let file_name = "C:/Temp/EnglishWords/words_ansi.txt"; // 5 MB file
+        let file = std::fs::File::open(file_name).unwrap();
+        let mut stream = AsciiStreamReader::new(file);
+        //let mut stream = AsciiStreamReader::with_capacity(1024 * 1024, file);
+        let mut z_count = 0;
+        let mut line = AsciiString::new();
+        let start = std::time::Instant::now();
+
+        while stream.read_line(&mut line).is_success() {
+            //z_count += line.iter_ascii().filter(|c| c == &'z').count();
+            z_count += 1;
+        }
+
+        let end = start.elapsed().as_millis();
+        println!("AsciiStreamReader: read_line() {z_count} lines read in {end} ms",);
+    }
+    {
+        let file_name = "C:/Temp/EnglishWords/words_ansi.txt"; // 5 MB file
+        let file = std::fs::File::open(file_name).unwrap();
+        let mut stream = AsciiStreamReader::new(file);
+        //let mut stream = AsciiStreamReader::with_capacity(1024 * 1024, file);
+        let mut z_count = 0;
+        let mut l_count = 0;
+        let mut line = AsciiString::new();
+        let start = std::time::Instant::now();
+
+        while stream.read_line(&mut line).is_success() {
+            z_count += line.iter_ascii().filter(|c| c == &'z').count();
+            l_count += 1;
+        }
+
+        let end = start.elapsed().as_millis();
+        println!(
+            "AsciiStreamReader: read_line() {l_count} lines read, {z_count} z's found  in {end} ms",
+        );
+    }
+    {
+        let file_name = "C:/Temp/EnglishWords/words_ansi.txt"; // 5 MB file
+        let file = std::fs::File::open(file_name).unwrap();
+        let mut reader = AsciiStreamReader::new(file);
+        let mut writer = AsciiStreamWriter::new(Vec::new());
+
+        let mut l_count = 0;
+        let mut line = AsciiString::new();
+        let start = std::time::Instant::now();
+
+        while reader.read_line(&mut line).is_success() {
+            writer.write_line(&line).unwrap();
+            l_count += 1;
+        }
+
+        let end = start.elapsed().as_millis();
+        let count = writer.into_inner().expect("Wont fail").len();
+        println!("AsciiStreamReader: read_line()/write_line() {l_count} lines, {count} bytes, in {end} ms",);
     }
 }
