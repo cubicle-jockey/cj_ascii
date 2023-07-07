@@ -168,10 +168,13 @@ impl<R: Read> AsciiStreamReader<R> {
         let mut vec = Vec::with_capacity(len);
         vec.resize(len, 0);
         let result = self.inner.read(&mut vec);
-        if result.is_ok() {
+        if let Ok(result) = result {
+            vec.truncate(result);
             *buf = AsciiString::from(vec);
+            Ok(result)
+        } else {
+            result
         }
-        result
     }
 }
 
@@ -287,6 +290,24 @@ mod test {
         let r = stream.read_line(&mut buf);
         assert_eq!(buf.to_string(), "");
         assert!(r.is_eof());
+    }
+
+    #[test]
+    fn test_ascii_stream_reader_bytes() {
+        use super::*;
+
+        let mut stream = AsciiStreamReader::new(Cursor::new(
+            b"This is test1\nThis is test2\r\nThis is test3",
+        ));
+        let mut buf = AsciiString::new();
+        stream.read_bytes(&mut buf, 14);
+        assert_eq!(buf.to_string(), "This is test1\n");
+        stream.read_bytes(&mut buf, 15);
+        assert_eq!(buf.to_string(), "This is test2\r\n");
+        stream.read_bytes(&mut buf, 13);
+        assert_eq!(buf.to_string(), "This is test3");
+        let r = stream.read_bytes(&mut buf, 14);
+        assert_eq!(buf.to_string(), "");
     }
 
     #[test]
