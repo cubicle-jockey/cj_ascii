@@ -288,3 +288,80 @@ fn main() {
     assert_eq!(result.to_string(),"The beginning.\nThe middle.\nThe end.");
 }
 ```
+Async Streams
+* reader
+```rust
+async fn read_example() {
+    use cj_ascii::prelude::*;
+    use futures::io::Cursor;
+  
+    let mut stream = AsciiStreamReaderAsync::new(Cursor::new(b"abc\r\ndef\r\nghi"));
+    let mut buf = AsciiString::new();
+    while stream.read_line(&mut buf).await.is_success() {
+        println!("{}", buf);
+    }
+}
+```
+```rust ignore
+// tokio example
+async fn read_example_tokio() {
+    use cj_ascii::prelude::*;
+    use tokio_util::compat::*;
+  
+    let file_name = "C:/Temp/EnglishWords/words_ansi.txt";
+    let file = tokio::fs::File::open(file_name).await.unwrap();
+    let mut stream = AsciiStreamReaderAsync::new(file.compat());
+
+    let mut line = AsciiString::new();
+    while stream.read_line(&mut line).await.is_success() {
+        println!("{}", line);
+    }
+}
+```
+* writer
+```rust
+async fn write_example() {
+    use cj_ascii::prelude::*;
+    use futures::io::Cursor;
+  
+    let mut stream = AsciiStreamWriterAsync::new(Cursor::new(Vec::new()));
+    let mut buf = AsciiString::new();
+    buf += "abc";
+    stream.write_line(&buf).await.unwrap();
+  
+    buf.clear();
+    buf += "def";
+    stream.write_line(&buf).await.unwrap();
+  
+    buf.clear();
+    buf += "ghi";
+    stream.write(&buf).await.unwrap();
+    stream.flush().await.unwrap();
+  
+    let result = stream.into_inner();
+    assert_eq!(result.into_inner(), [97, 98, 99, 10, 100, 101, 102, 10, 103, 104, 105]);
+}
+```
+
+```rust ignore
+// tokio example
+async fn write_example_tokio() {
+    use cj_ascii::prelude::*;
+    use tokio_util::compat::*;
+  
+    let file_name = "C:/Temp/Test/words_ansi_out.txt";
+    let file = tokio::fs::File::create(file_name).await.unwrap();
+    let mut stream = AsciiStreamWriterAsync::new(file.compat());
+
+    let mut line = AsciiString::new();
+    line += "abc";
+    stream.write_line(&line).await.unwrap();
+    line.clear();
+    line += "def";
+    stream.write_line(&line).await.unwrap();
+    line.clear();
+    line += "ghi";
+    stream.write(&line).await.unwrap();
+    stream.flush().await.unwrap();
+}
+```

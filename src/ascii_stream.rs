@@ -1,3 +1,4 @@
+use crate::ascii_consts::*;
 use crate::ascii_string::AsciiString;
 use std::io::{BufRead, BufReader, BufWriter, IntoInnerError, Read, Write};
 
@@ -122,13 +123,13 @@ impl<R: Read> AsciiStreamReader<R> {
     /// Reads the next line of ascii characters into the specified AsciiString.
     #[inline]
     pub fn read_line(&mut self, buf: &mut AsciiString) -> ReadLineResult {
-        let result = self.read_until(b'\n', buf);
+        let result = self.read_until(LF, buf);
         match result {
             Ok(result) => {
                 if result > 0 {
-                    if buf[result - 1] == b'\n' {
+                    if buf[result - 1] == LF {
                         buf.pop();
-                        if result > 1 && buf[result - 2] == b'\r' {
+                        if result > 1 && buf[result - 2] == CR {
                             buf.pop();
                         }
                     }
@@ -165,8 +166,7 @@ impl<R: Read> AsciiStreamReader<R> {
     /// Reads the specified number of bytes into the specified AsciiString.
     pub fn read_bytes(&mut self, buf: &mut AsciiString, len: usize) -> std::io::Result<usize> {
         buf.clear();
-        let mut vec = Vec::with_capacity(len);
-        vec.resize(len, 0);
+        let mut vec = vec![0; len];
         let result = self.inner.read(&mut vec);
         if let Ok(result) = result {
             vec.truncate(result);
@@ -250,13 +250,13 @@ impl<W: Write> AsciiStreamWriter<W> {
     #[inline]
     pub fn write_line(&mut self, buf: &AsciiString) -> std::io::Result<()> {
         self.write(buf)?;
-        self.inner.write_all(b"\n")
+        self.inner.write_all(&[LF])
     }
     /// Writes the entire AsciiString to the stream, followed by a carriage return and a newline.    
     #[inline]
     pub fn write_line_crlf(&mut self, buf: &AsciiString) -> std::io::Result<()> {
         self.write(buf)?;
-        self.inner.write_all(b"\r\n")
+        self.inner.write_all(&[CR, LF])
     }
     /// Flushes the internal buffer, writing all buffered bytes to the underlying stream.
     pub fn flush(&mut self) -> std::io::Result<()> {
@@ -306,7 +306,7 @@ mod test {
         assert_eq!(buf.to_string(), "This is test2\r\n");
         stream.read_bytes(&mut buf, 13);
         assert_eq!(buf.to_string(), "This is test3");
-        let r = stream.read_bytes(&mut buf, 14);
+        let _r = stream.read_bytes(&mut buf, 14);
         assert_eq!(buf.to_string(), "");
     }
 

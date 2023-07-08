@@ -63,6 +63,9 @@ pub fn main() {
 
     perf_test();
     perf_stream_test();
+
+    #[cfg(feature = "async")]
+    perf_async_tests();
 }
 
 fn perf_test() {
@@ -222,5 +225,103 @@ fn perf_stream_test() {
         let end = start.elapsed().as_millis();
         let count = writer.into_inner().expect("Wont fail").len();
         println!("AsciiStreamReader: read_line()/write_line() {l_count} lines, {count} bytes, in {end} ms",);
+    }
+}
+
+#[cfg(feature = "async")]
+fn perf_async_tests() {
+    use tokio::runtime::Runtime;
+    let mut rt = tokio::runtime::Builder::new_current_thread()
+        .build()
+        .unwrap();
+
+    rt.block_on(perf_async_stream_test());
+}
+
+#[cfg(feature = "async")]
+mod ascii_stream_async;
+#[cfg(feature = "async")]
+async fn perf_async_stream_test() {
+    use ascii_stream_async::*;
+    {
+        use tokio_util::compat::*;
+
+        let file_name = "C:/Temp/EnglishWords/words_ansi.txt"; // 5 MB file
+        let file = tokio::fs::File::open(file_name).await.unwrap();
+        let mut stream = AsciiStreamReaderAsync::new(file.compat());
+
+        let mut z_count = 0;
+        let mut line = AsciiString::new();
+        let start = std::time::Instant::now();
+
+        while stream.read_line(&mut line).await.is_success() {
+            //z_count += line.iter_ascii().filter(|c| c == &'z').count();
+            z_count += 1;
+        }
+
+        let end = start.elapsed().as_millis();
+        println!("AsciiStreamReader: read_line() {z_count} lines read in {end} ms",);
+    }
+    {
+        use tokio_util::compat::*;
+
+        let file_name = "C:/Temp/EnglishWords/words_ansi.txt"; // 5 MB file
+        let file = tokio::fs::File::open(file_name).await.unwrap();
+        let mut stream = AsciiStreamReaderAsync::new(file.compat());
+
+        let mut l_count = 0;
+        let mut z_count = 0;
+        let mut line = AsciiString::new();
+        let start = std::time::Instant::now();
+
+        while stream.read_line(&mut line).await.is_success() {
+            z_count += line.iter_ascii().filter(|c| c == &'z').count();
+            l_count += 1;
+        }
+
+        let end = start.elapsed().as_millis();
+        println!(
+            "AsciiStreamReader: read_line() {l_count} lines read, {z_count} z's found in {end} ms",
+        );
+    }
+    {
+        use tokio_util::compat::*;
+
+        let file_name = "C:/Temp/EnglishWords/words_ansi.txt"; // 5 MB file
+        let file = tokio::fs::File::open(file_name).await.unwrap();
+        let mut stream = AsciiStreamReaderAsync::new(file.compat());
+
+        let mut line = AsciiString::new();
+        let start = std::time::Instant::now();
+
+        while stream.read_line(&mut line).await.is_success() {
+            //println!("{}", line);
+        }
+
+        let end = start.elapsed().as_millis();
+        println!("AsciiStreamReader: read_line() println in {end} ms",);
+    }
+    {
+        use cj_ascii::prelude::*;
+        use tokio_util::compat::*;
+
+        let file_name = "C:/Temp/EnglishWords/words_ansi_out.txt";
+        let file = tokio::fs::File::create(file_name).await.unwrap();
+        let mut stream = AsciiStreamWriterAsync::new(file.compat());
+        let start = std::time::Instant::now();
+
+        let mut line = AsciiString::new();
+        line += "abc";
+        stream.write_line(&line).await.unwrap();
+        line.clear();
+        line += "def";
+        stream.write_line(&line).await.unwrap();
+        line.clear();
+        line += "ghi";
+        stream.write(&line).await.unwrap();
+        stream.flush().await.unwrap();
+
+        let end = start.elapsed().as_millis();
+        println!("AsciiStreamWriter: write_line() in {end} ms",);
     }
 }

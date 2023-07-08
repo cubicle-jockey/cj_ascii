@@ -19,24 +19,21 @@
 //! # samples
 //! basic example
 //! ```rust
-//! fn main() {
 //!     use cj_ascii::prelude::*;
 //!
-//! let mut astring = AsciiString::try_from("This is a test").unwrap();
+//!     let mut astring = AsciiString::try_from("This is a test").unwrap();
 //!     let mut astring2 = AsciiString::with_capacity(14);
 //!     astring2 += "This";
 //!     astring2 += " is";
 //!     astring2 += " a";
 //!     astring2 += " test";
 //!     assert_eq!(astring, astring2);
-//! }
 //! ```
 //! Mix of char, u8, &str and AsciiString concatenation.
 //! ```rust
-//! fn main() {
 //!     use cj_ascii::prelude::*;
 //!
-//! let mut astring = AsciiString::new();
+//!     let mut astring = AsciiString::new();
 //!     astring += 'A';
 //!     astring += 66;
 //!     astring += "C";
@@ -44,14 +41,12 @@
 //!     let astring2 = AsciiString::from(&astring);
 //!     astring += astring2;
 //!     assert_eq!(&astring.to_string(), "ABCDEFABCDEF");
-//! }
 //! ```
 //! Indexing
 //! ```rust
-//! fn main() {
 //!     use cj_ascii::prelude::*;
 //!
-//! let mut astring = AsciiString::new();
+//!     let mut astring = AsciiString::new();
 //!     astring += 'A';
 //!     astring += 66;
 //!     astring += "C";
@@ -62,11 +57,9 @@
 //!     assert_eq!(astring[3], 68);
 //!     assert_eq!(astring[4], 69);
 //!     assert_eq!(astring[5], 70);
-//! }
 //! ```
 //! Indexing Mut
 //! ```rust
-//! fn main() {
 //!     use cj_ascii::prelude::*;
 //!     let mut astring = AsciiString::new();
 //!     astring += "ABCDEF";
@@ -78,12 +71,10 @@
 //!     astring[5] = 76;
 //!     assert_eq!(astring[0], 'G'.ascii_ord_unchecked());
 //!     assert_eq!(astring.to_string(), "GHIJKL");
-//! }
 //! ```
 //! Iter
 //! * user iter() to iterate over the raw bytes.
 //! ```rust
-//! fn main() {
 //!     use cj_ascii::prelude::*;
 //!     let mut astring = AsciiString::new();
 //!     astring += "ABCDEF";
@@ -104,12 +95,10 @@
 //!     assert_eq!(iter.next(), Some(&'E'.ascii_ord_unchecked()));
 //!     assert_eq!(iter.next(), Some(&'F'.ascii_ord_unchecked()));
 //!     assert_eq!(iter.next(), None);
-//! }
 //! ```
 //! Iter Mut
 //! * user iter_mut() to iterate over and modify the raw bytes.
 //! ```rust
-//! fn main() {
 //!     use cj_ascii::prelude::*;
 //!     let mut astring = AsciiString::new();
 //!     astring += "ABCDEF";
@@ -118,12 +107,10 @@
 //!         *c = *c + 1;
 //!     }
 //!     assert_eq!(astring.to_string(), "BCDEFG");
-//! }
 //! ```
 //! Iter Ascii
 //! * use iter_ascii() to iterate as chars.
 //! ```rust
-//! fn main() {
 //!     use cj_ascii::prelude::*;
 //!     let mut astring = AsciiString::new();
 //!     astring += "ABCDEF";
@@ -135,7 +122,6 @@
 //!     assert_eq!(iter.next(), Some('E'));
 //!     assert_eq!(iter.next(), Some('F'));
 //!     assert_eq!(iter.next(), None);
-//! }
 //! ```
 //! Iter AsciiGroup
 //! * AsciiGroup is an enum that represents the different categories of ASCII characters.
@@ -144,7 +130,6 @@
 //! * Printable - ASCII characters that are printable (space through tilda).
 //! * Extended - ASCII characters in the extended ascii range (ordinal 128 through 255).
 //! ```rust
-//! fn main() {
 //!     use cj_ascii::prelude::*;
 //!     let astring = AsciiString::try_from("Hello World!").unwrap();
 //!     for x in astring.iter_ascii_group() {
@@ -155,13 +140,11 @@
 //!             AsciiGroup::Extended(_) => println!("Extended: {}", x.as_byte()),
 //!         }
 //!     }
-//! }
 //! ```
 //! Push (char or u8)
 //! * u8 values are pushed as is and will never fail.
 //! * char values will panic if they are not ASCII.
 //! ```rust
-//! fn main() {
 //!     use cj_ascii::prelude::*;
 //!     let mut astring = AsciiString::new();
 //!     astring.push('A');
@@ -173,11 +156,9 @@
 //!     astring.push_front(89);
 //!     astring.push_front('X');
 //!     assert_eq!(astring.to_string(), "XYZABCD");
-//! }
 //! ```
 //! Try Push (char or u8)
 //! ```rust
-//! fn main() {
 //!     use cj_ascii::prelude::*;
 //!     let mut astring = AsciiString::new();
 //!     astring.try_push('A').unwrap();
@@ -187,52 +168,44 @@
 //!     assert!(astring.try_push('€').is_err());
 //!     assert_eq!(astring.to_string(), "ABCD");
 //!
-//! let mut astring = AsciiString::new();
+//!     let mut astring = AsciiString::new();
 //!     astring.try_push_front('A').unwrap();
 //!     astring.try_push_front(66).unwrap();
 //!     astring.try_push_front('C').unwrap();
 //!     astring.try_push_front('D').unwrap();
 //!     assert!(astring.try_push_front('€').is_err());
 //!     assert_eq!(astring.to_string(), "DCBA");
-//! }
 //! ```
 //! Push str
 //! * use push_str if you know the string only contains ascii.
 //! * push_str will panic if the string contains non-ascii characters.
 //! ```rust
-//! fn main() {
 //!     use cj_ascii::prelude::*;
 //!     let mut astring = AsciiString::new();
 //!     astring.push_str("ABC");
 //!     astring.push_str("DEF");
 //!     assert_eq!(astring.to_string(), "ABCDEF");
-//! }
 //! ```
 //! Push str Lossy
 //! * push_str_lossy will replace non-ascii characters with a space.
 //! ```rust
-//! fn main() {
 //!     use cj_ascii::prelude::*;
 //!     let mut astring = AsciiString::new();
 //!     astring.push_str_lossy("ABCD");
 //!     astring.push_str_lossy("€");
 //!     assert_eq!(astring.to_string(), "ABCD ");
-//! }
 //! ```
 //! Invalid Ascii
 //! * try_from will return an error if the string contains non-ascii characters.
 //! ```rust
-//! fn main() {
 //!     use cj_ascii::prelude::*;
 //!     let string = "ABC€";
 //!     let result = AsciiString::try_from(string);
 //!     assert!(result.is_err());
-//! }
 //! ```
 //! Streams
 //! * reader
 //! ```rust
-//! fn main() {
 //!     use cj_ascii::prelude::*;
 //!     use std::io::Cursor;
 //!
@@ -248,11 +221,9 @@
 //!     while reader.read_line(&mut astring).is_success() {
 //!         println!("{}", astring);
 //!     }
-//! }
 //! ```
 //! * writer
 //! ```rust
-//! fn main() {
 //!     use cj_ascii::prelude::*;
 //!
 //!     let mut writer = AsciiStreamWriter::new(Vec::new());
@@ -281,12 +252,93 @@
 //!     
 //!     let result = AsciiString::from(vec);
 //!     assert_eq!(result.to_string(),"The beginning.\nThe middle.\nThe end.");
+//! ```
+//! Async Streams
+//! * reader
+//! ```rust
+//! #[cfg(feature = "async")]
+//! async fn read_example() {
+//!     use cj_ascii::prelude::*;
+//!     use futures::io::Cursor;
+//!   
+//!     let mut stream = AsciiStreamReaderAsync::new(Cursor::new(b"abc\r\ndef\r\nghi"));
+//!     let mut buf = AsciiString::new();
+//!     while stream.read_line(&mut buf).await.is_success() {
+//!         println!("{}", buf);
+//!     }
+//! }
+//!```
+//!
+//! ```rust no_run
+//! // tokio example
+//! #[cfg(feature = "async")]
+//! async fn read_example_tokio() {
+//!     use cj_ascii::prelude::*;
+//!     use tokio_util::compat::*;
+//!   
+//!     let file_name = "C:/Temp/EnglishWords/words_ansi.txt";
+//!     let file = tokio::fs::File::open(file_name).await.unwrap();
+//!     let mut stream = AsciiStreamReaderAsync::new(file.compat());
+//!
+//!     let mut line = AsciiString::new();
+//!     while stream.read_line(&mut line).await.is_success() {
+//!         println!("{}", line);
+//!     }
+//! }
+//! ```
+//! * writer
+//! ```rust
+//! #[cfg(feature = "async")]
+//! async fn write_example() {
+//!    use cj_ascii::prelude::*;
+//!    use futures::io::Cursor;
+//!
+//!    let mut stream = AsciiStreamWriterAsync::new(Cursor::new(Vec::new()));
+//!    let mut buf = AsciiString::new();
+//!    buf += "abc";
+//!    stream.write_line(&buf).await.unwrap();
+//!
+//!    buf.clear();
+//!    buf += "def";
+//!    stream.write_line(&buf).await.unwrap();
+//!
+//!    buf.clear();
+//!    buf += "ghi";
+//!    stream.write(&buf).await.unwrap();
+//!    stream.flush().await.unwrap();
+//!
+//!    let result = stream.into_inner();
+//!    assert_eq!(result.into_inner(), [97, 98, 99, 13, 10, 100, 101, 102, 13, 10, 103, 104, 105]);
+//!}
+//!```
+//!```rust ignore
+//! // tokio example
+//! async fn write_example_tokio() {
+//!     use cj_ascii::prelude::*;
+//!     use tokio_util::compat::*;
+//!
+//!     let file_name = "C:/Temp/Test/words_ansi_out.txt";
+//!     let file = tokio::fs::File::create(file_name).await.unwrap();
+//!     let mut stream = AsciiStreamWriterAsync::new(file.compat());
+//!
+//!     let mut line = AsciiString::new();
+//!     line += "abc";
+//!     stream.write_line(&line).await.unwrap();
+//!     line.clear();
+//!     line += "def";
+//!     stream.write_line(&line).await.unwrap();
+//!     line.clear();
+//!     line += "ghi";
+//!     stream.write(&line).await.unwrap();
+//!     stream.flush().await.unwrap();
 //! }
 //! ```
 
 pub mod ascii_consts;
 pub mod ascii_group;
 pub mod ascii_stream;
+#[cfg(feature = "async")]
+pub mod ascii_stream_async;
 pub mod ascii_string;
 pub mod ascii_traits;
 pub mod ascii_translators;
@@ -295,6 +347,8 @@ pub mod prelude {
     pub use crate::ascii_consts::*;
     pub use crate::ascii_group::*;
     pub use crate::ascii_stream::*;
+    #[cfg(feature = "async")]
+    pub use crate::ascii_stream_async::*;
     pub use crate::ascii_string::*;
     pub use crate::ascii_traits::*;
     pub use crate::ascii_translators::*;
