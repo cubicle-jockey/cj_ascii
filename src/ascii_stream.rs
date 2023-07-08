@@ -166,8 +166,7 @@ impl<R: Read> AsciiStreamReader<R> {
     /// Reads the specified number of bytes into the specified AsciiString.
     pub fn read_bytes(&mut self, buf: &mut AsciiString, len: usize) -> std::io::Result<usize> {
         buf.clear();
-        let mut vec = Vec::with_capacity(len);
-        vec.resize(len, 0);
+        let mut vec = vec![0; len];
         let result = self.inner.read(&mut vec);
         if let Ok(result) = result {
             vec.truncate(result);

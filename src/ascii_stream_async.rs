@@ -106,8 +106,8 @@ impl<R: AsyncRead + Unpin> AsciiStreamReaderAsync<R> {
         len: usize,
     ) -> std::io::Result<usize> {
         buf.clear();
-        let mut vec = Vec::with_capacity(len);
-        vec.resize(len, 0);
+        let mut vec = vec![0u8; len]; // Vec::with_capacity(len);
+                                      //vec.resize(len, 0);
         let result = self.inner.read(&mut vec).await;
         if let Ok(result) = result {
             vec.truncate(result);
