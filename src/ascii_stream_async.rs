@@ -3,9 +3,8 @@
 use crate::ascii_consts::*;
 use crate::ascii_stream::ReadLineResult;
 use crate::ascii_string::AsciiString;
-use futures::io::{AsyncBufRead, AsyncRead, AsyncWrite, BufReader, BufWriter};
+use futures::io::{AsyncRead, AsyncWrite, BufReader, BufWriter};
 use futures::{AsyncBufReadExt, AsyncReadExt, AsyncWriteExt};
-use std::io::IntoInnerError;
 
 /// An asynchronous buffered reader which reads data as ascii characters.
 /// # Examples
