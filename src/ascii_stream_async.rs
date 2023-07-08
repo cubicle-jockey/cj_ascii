@@ -3,8 +3,9 @@
 use crate::ascii_consts::*;
 use crate::ascii_stream::ReadLineResult;
 use crate::ascii_string::AsciiString;
-use futures::io::{AsyncBufRead, AsyncRead, AsyncWrite, BufReader};
-use futures::{AsyncBufReadExt, AsyncReadExt};
+use futures::io::{AsyncBufRead, AsyncRead, AsyncWrite, BufReader, BufWriter};
+use futures::{AsyncBufReadExt, AsyncReadExt, AsyncWriteExt};
+use std::io::IntoInnerError;
 
 /// An asynchronous buffered reader which reads data as ascii characters.
 /// # Examples
@@ -119,6 +120,91 @@ impl<R: AsyncRead + Unpin> AsciiStreamReaderAsync<R> {
     }
 }
 
+/// An asynchronous buffered writer which writes data as ascii characters.
+/// # Examples
+/// ```
+/// async fn write_example() {
+///     use cj_ascii::ascii_stream_async::AsciiStreamWriterAsync;
+///     use cj_ascii::ascii_string::AsciiString;
+///     use futures::io::Cursor;
+///
+///     let mut stream = AsciiStreamWriterAsync::new(Cursor::new(Vec::new()));
+///     let mut buf = AsciiString::new();
+///     buf += "abc";
+///     stream.write_line(&buf).await.unwrap();
+///
+///     buf.clear();
+///     buf += "def";
+///     stream.write_line_crlf(&buf).await.unwrap();
+///
+///     buf.clear();
+///     buf += "ghi";
+///     stream.write(&buf).await.unwrap();
+///
+///     let result = stream.flush().await;
+///     assert!(result.is_ok());
+///
+///     let result = stream.into_inner();
+///     assert_eq!(result.into_inner(), b"abc\ndef\r\nghi");
+///}
+/// ```
+#[derive(Debug)]
+pub struct AsciiStreamWriterAsync<W> {
+    inner: BufWriter<W>,
+}
+
+impl<W: AsyncWrite + Unpin> AsciiStreamWriterAsync<W> {
+    /// Creates a new `AsciiStreamWriterAsync` with a default buffer capacity.
+    pub fn new(inner: W) -> Self {
+        Self {
+            inner: BufWriter::new(inner),
+        }
+    }
+
+    /// Creates a new `AsciiStreamWriterAsync` with the specified buffer capacity.
+    pub fn with_capacity(capacity: usize, inner: W) -> Self {
+        Self {
+            inner: BufWriter::with_capacity(capacity, inner),
+        }
+    }
+
+    /// Writes the specified buffer to the stream.
+    pub async fn write(&mut self, buf: &AsciiString) -> std::io::Result<()> {
+        //self.inner.write_all(buf.as_bytes())
+        let (a, b) = buf.bytes.as_slices();
+        let mut result = Ok(());
+        if !a.is_empty() {
+            result = self.inner.write_all(a).await;
+        }
+        if result.is_ok() && !b.is_empty() {
+            result = self.inner.write_all(b).await;
+        }
+        result
+    }
+
+    /// Writes the specified buffer to the stream, followed by a line feed.
+    pub async fn write_line(&mut self, buf: &AsciiString) -> std::io::Result<()> {
+        self.write(buf).await?;
+        self.inner.write_all(&[LF]).await
+    }
+
+    /// Writes the specified buffer to the stream, followed by a carriage return and a line feed.
+    pub async fn write_line_crlf(&mut self, buf: &AsciiString) -> std::io::Result<()> {
+        self.write(buf).await?;
+        self.inner.write_all(&[CR, LF]).await
+    }
+
+    /// Flushes the stream.
+    pub async fn flush(&mut self) -> std::io::Result<()> {
+        self.inner.flush().await
+    }
+
+    /// Consumes self, returning the underlying writer.
+    pub fn into_inner(self) -> W {
+        self.inner.into_inner()
+    }
+}
+
 #[cfg(test)]
 mod test {
     #[tokio::test]
@@ -151,5 +237,32 @@ mod test {
         while stream.read_line(&mut buf).await.is_success() {
             println!("{}", buf);
         }
+    }
+
+    #[tokio::test]
+    async fn test_write_line() {
+        use super::*;
+        use futures::io::Cursor;
+
+        let mut stream = AsciiStreamWriterAsync::new(Cursor::new(Vec::new()));
+        let mut buf = AsciiString::new();
+        buf += "abc";
+        stream.write_line(&buf).await.unwrap();
+
+        buf.clear();
+        buf += "def";
+        stream.write_line_crlf(&buf).await.unwrap();
+
+        buf.clear();
+        buf += "ghi";
+        stream.write(&buf).await.unwrap();
+
+        let result = stream.flush().await;
+        assert!(result.is_ok());
+        let result = stream.into_inner();
+        assert_eq!(
+            result.into_inner(),
+            [97, 98, 99, 10, 100, 101, 102, 13, 10, 103, 104, 105]
+        );
     }
 }

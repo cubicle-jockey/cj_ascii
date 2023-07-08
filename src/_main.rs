@@ -295,10 +295,33 @@ async fn perf_async_stream_test() {
         let start = std::time::Instant::now();
 
         while stream.read_line(&mut line).await.is_success() {
-            println!("{}", line);
+            //println!("{}", line);
         }
 
         let end = start.elapsed().as_millis();
         println!("AsciiStreamReader: read_line() println in {end} ms",);
+    }
+    {
+        use cj_ascii::prelude::*;
+        use tokio_util::compat::*;
+
+        let file_name = "C:/Temp/EnglishWords/words_ansi_out.txt";
+        let file = tokio::fs::File::create(file_name).await.unwrap();
+        let mut stream = AsciiStreamWriterAsync::new(file.compat());
+        let start = std::time::Instant::now();
+
+        let mut line = AsciiString::new();
+        line += "abc";
+        stream.write_line(&line).await.unwrap();
+        line.clear();
+        line += "def";
+        stream.write_line(&line).await.unwrap();
+        line.clear();
+        line += "ghi";
+        stream.write(&line).await.unwrap();
+        stream.flush().await.unwrap();
+
+        let end = start.elapsed().as_millis();
+        println!("AsciiStreamWriter: write_line() in {end} ms",);
     }
 }
