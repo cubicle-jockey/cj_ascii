@@ -444,15 +444,15 @@ impl AsciiString {
     /// # note
     /// * a mutable reference is required, but only to make the memory contiguous (if not contiguous already).
     pub fn as_bytes(&mut self) -> &[u8] {
-        self.bytes.make_contiguous();
-        self.bytes.as_slices().0
+        self.bytes.make_contiguous()
+        //self.bytes.as_slices().0
     }
     /// Returns a mutable byte slice of the raw `AsciiString`.
     ///
     /// * Each byte represents a single char.
     pub fn as_bytes_mut(&mut self) -> &mut [u8] {
-        self.bytes.make_contiguous();
-        self.bytes.as_mut_slices().0
+        self.bytes.make_contiguous()
+        //self.bytes.as_mut_slices().0
     }
 
     /// Fills buf with the contents of the `AsciiString`, returning the number of bytes read.
@@ -736,7 +736,7 @@ impl AddAssign<AsciiString> for AsciiString {
 impl AddAssign<&AsciiString> for AsciiString {
     #[inline(always)]
     fn add_assign(&mut self, rhs: &AsciiString) {
-        self.bytes.extend(rhs.bytes.clone());
+        self.bytes.extend(&rhs.bytes);
     }
 }
 
@@ -1009,7 +1009,7 @@ impl From<Vec<u8>> for AsciiString {
 impl From<&[u8]> for AsciiString {
     fn from(value: &[u8]) -> Self {
         let mut result = Self::with_capacity(value.len());
-        result.bytes.extend(value.iter().copied());
+        result.bytes.extend(value.iter());
         result
     }
 }

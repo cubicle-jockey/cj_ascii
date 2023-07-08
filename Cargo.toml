@@ -14,9 +14,9 @@ license = "MIT OR Apache-2.0"
 name = "cj_ascii"
 path = "src/lib.rs"
 
-#[[bin]]
-#name = "cj_ascii"
-#path = "src/_main.rs"
+[[bin]]
+name = "cj_ascii"
+path = "src/_main.rs"
 
 # these flags provide the best performance possible, resulting in AnsiString methods that are roughly 2x faster than the String equivalents
 [profile.release]  # _main testing
