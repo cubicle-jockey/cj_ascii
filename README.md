@@ -305,7 +305,7 @@ async fn read_example() {
 ```rust ignore
 // tokio example
 async fn read_example_tokio() {
-  use cj_ascii::prelude::*;
+    use cj_ascii::prelude::*;
     use tokio_util::compat::*;
   
     let file_name = "C:/Temp/EnglishWords/words_ansi.txt";
