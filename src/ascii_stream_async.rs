@@ -45,22 +45,19 @@ pub struct AsciiStreamReaderAsync<R> {
 }
 
 impl<R: AsyncRead + Unpin> AsciiStreamReaderAsync<R> {
+    /// Creates a new `AsciiStreamReaderAsync` with a default buffer capacity.
     pub fn new(inner: R) -> Self {
         Self {
             inner: BufReader::new(inner),
         }
     }
-
+    /// Creates a new `AsciiStreamReaderAsync` with the specified buffer capacity.
     pub fn with_capacity(capacity: usize, inner: R) -> Self {
         Self {
             inner: BufReader::with_capacity(capacity, inner),
         }
     }
-
-    // pub fn capacity(&self) -> usize {
-    //     self.inner.capacity()
-    // }
-
+    /// Reads a line from the stream into the specified buffer, removing the line ending.
     pub async fn read_line(&mut self, buf: &mut AsciiString) -> ReadLineResult {
         let result = self.read_until(LF, buf).await;
         match result {
@@ -80,7 +77,8 @@ impl<R: AsyncRead + Unpin> AsciiStreamReaderAsync<R> {
             Err(err) => ReadLineResult::Error(err),
         }
     }
-
+    /// Reads data from the stream until the specified byte is encountered.
+    /// * The specified byte is included in the returned data.
     pub async fn read_until(&mut self, byte: u8, buf: &mut AsciiString) -> std::io::Result<usize> {
         buf.clear();
         let mut vec = Vec::new();
@@ -91,6 +89,7 @@ impl<R: AsyncRead + Unpin> AsciiStreamReaderAsync<R> {
         result
     }
 
+    /// Reads all data from the stream until EOF is encountered.
     pub async fn read_to_end(&mut self, buf: &mut AsciiString) -> std::io::Result<usize> {
         buf.clear();
         let mut vec = Vec::new();
@@ -100,7 +99,7 @@ impl<R: AsyncRead + Unpin> AsciiStreamReaderAsync<R> {
         }
         result
     }
-
+    /// Reads the specified number of bytes from the stream.
     pub async fn read_bytes(
         &mut self,
         buf: &mut AsciiString,
