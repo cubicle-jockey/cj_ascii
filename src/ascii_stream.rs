@@ -306,7 +306,7 @@ mod test {
         assert_eq!(buf.to_string(), "This is test2\r\n");
         stream.read_bytes(&mut buf, 13);
         assert_eq!(buf.to_string(), "This is test3");
-        let r = stream.read_bytes(&mut buf, 14);
+        let _r = stream.read_bytes(&mut buf, 14);
         assert_eq!(buf.to_string(), "");
     }
 

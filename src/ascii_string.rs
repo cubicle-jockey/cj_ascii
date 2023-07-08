@@ -1160,7 +1160,7 @@ mod test {
         string.push(67);
         let result = String::from(&string);
         assert_eq!(result.len(), 3);
-        assert_eq!(result.chars().nth(0).unwrap(), 'A');
+        assert_eq!(result.chars().next().unwrap(), 'A');
         assert_eq!(result.chars().nth(1).unwrap(), 'B');
         assert_eq!(result.chars().nth(2).unwrap(), 'C');
     }
@@ -1234,7 +1234,7 @@ mod test {
     fn test_assign_str() {
         use crate::ascii_string::AsciiString;
         let mut string = AsciiString::with_capacity(3);
-        string = string + "ABC";
+        string += "ABC";
         assert_eq!(&string.to_string(), "ABC");
     }
 
@@ -1428,9 +1428,7 @@ mod test {
             assert_eq!(x.as_byte(), c);
             assert_eq!(x.as_char(), c.to_ascii_char());
 
-            if c < 255 {
-                c += 1;
-            }
+            c = c.saturating_add(1);
         }
     }
 
