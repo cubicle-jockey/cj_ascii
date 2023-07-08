@@ -3,8 +3,8 @@ name = "cj_ascii"
 version = "0.1.4"
 edition = "2021"
 description = "A library for working with ASCII strings in Rust"
-keywords = ["ascii", "strings", "serialization"]
-categories = ["encoding", "parsing"]
+keywords = ["ascii", "strings", "serialization", "stream", "async"]
+categories = ["encoding", "parsing", "async"]
 repository = "https://github.com/cubicle-jockey/cj_ascii"
 homepage = "https://github.com/cubicle-jockey/cj_ascii"
 license = "MIT OR Apache-2.0"
@@ -14,9 +14,9 @@ license = "MIT OR Apache-2.0"
 name = "cj_ascii"
 path = "src/lib.rs"
 
-[[bin]]
-name = "cj_ascii"
-path = "src/_main.rs"
+#[[bin]]
+#name = "cj_ascii"
+#path = "src/_main.rs"
 
 # these flags provide the best performance possible, resulting in AnsiString methods that are roughly 2x faster than the String equivalents
 [profile.release]  # _main testing
@@ -29,12 +29,23 @@ codegen-units = 1  # huge performance boost, especially for closures
 
 
 [dependencies]
+futures = {version = "0.3.28", optional = true }
 serde = { version = "1.0", features = ["derive"], optional = true }
+#_main testing
+#tokio = { version = "1.13", features = ["macros","rt","fs","sync","io-util"] }
+#tokio-util = { version = "0.7.8", features = ["compat"] }
+
 
 [features]
-default = []
+default = ["async"]
 serialize = ["serde"]
+async = ["futures"]
 
 [dev-dependencies]
 serde_json = "1.0"
+#for async doc tests
+tokio = { version = "1.13", features = ["macros","rt","fs"] }
+#for async doc tests tokio examples
+tokio-util = { version = "0.7.8", features = ["compat"] }
+
 

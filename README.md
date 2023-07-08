@@ -288,3 +288,33 @@ fn main() {
     assert_eq!(result.to_string(),"The beginning.\nThe middle.\nThe end.");
 }
 ```
+Async Streams
+* reader
+```rust
+async fn read_example() {
+    use cj_ascii::prelude::*;
+    use futures::io::Cursor;
+  
+    let mut stream = AsciiStreamReaderAsync::new(Cursor::new(b"abc\r\ndef\r\nghi"));
+    let mut buf = AsciiString::new();
+    while stream.read_line(&mut buf).await.is_success() {
+        println!("{}", buf);
+    }
+}
+```
+```rust ignore
+// tokio example
+async fn read_example_tokio() {
+  use cj_ascii::prelude::*;
+    use tokio_util::compat::*;
+  
+    let file_name = "C:/Temp/EnglishWords/words_ansi.txt";
+    let file = tokio::fs::File::open(file_name).await.unwrap();
+    let mut stream = AsciiStreamReaderAsync::new(file.compat());
+
+    let mut line = AsciiString::new();
+    while stream.read_line(&mut line).await.is_success() {
+        println!("{}", line);
+    }
+}
+```

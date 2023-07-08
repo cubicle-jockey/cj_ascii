@@ -283,10 +283,45 @@
 //!     assert_eq!(result.to_string(),"The beginning.\nThe middle.\nThe end.");
 //! }
 //! ```
+//! Async Streams
+//! * reader
+//! ```rust
+//! #[cfg(feature = "async")]
+//! async fn read_example() {
+//!     use cj_ascii::prelude::*;
+//!     use futures::io::Cursor;
+//!   
+//!     let mut stream = AsciiStreamReaderAsync::new(Cursor::new(b"abc\r\ndef\r\nghi"));
+//!     let mut buf = AsciiString::new();
+//!     while stream.read_line(&mut buf).await.is_success() {
+//!         println!("{}", buf);
+//!     }
+//! }
+//!```
+//!
+//! ```rust no_run
+//! // tokio example
+//! #[cfg(feature = "async")]
+//! async fn read_example_tokio() {
+//!     use cj_ascii::prelude::*;
+//!     use tokio_util::compat::*;
+//!   
+//!     let file_name = "C:/Temp/EnglishWords/words_ansi.txt";
+//!     let file = tokio::fs::File::open(file_name).await.unwrap();
+//!     let mut stream = AsciiStreamReaderAsync::new(file.compat());
+//!
+//!     let mut line = AsciiString::new();
+//!     while stream.read_line(&mut line).await.is_success() {
+//!         println!("{}", line);
+//!     }
+//! }
+//! ```
 
 pub mod ascii_consts;
 pub mod ascii_group;
 pub mod ascii_stream;
+#[cfg(feature = "async")]
+pub mod ascii_stream_async;
 pub mod ascii_string;
 pub mod ascii_traits;
 pub mod ascii_translators;
@@ -295,6 +330,8 @@ pub mod prelude {
     pub use crate::ascii_consts::*;
     pub use crate::ascii_group::*;
     pub use crate::ascii_stream::*;
+    #[cfg(feature = "async")]
+    pub use crate::ascii_stream_async::*;
     pub use crate::ascii_string::*;
     pub use crate::ascii_traits::*;
     pub use crate::ascii_translators::*;
