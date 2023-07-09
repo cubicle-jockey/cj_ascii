@@ -20,6 +20,7 @@ Key features:
 * Iterators for both u8 and char.
 * raw bytes via as_bytes() and as_bytes_mut(), where the bytes are guaranteed to be valid ASCII (one byte = one char).
 * stream support via AsciiStreamReader and AsciiStreamWriter (included in this crate).
+* async stream support via AsciiStreamReaderAsync and AsciiStreamWriterAsync (included in this crate).
 ```
 # samples
 basic example
