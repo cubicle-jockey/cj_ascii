@@ -1,46 +1,7 @@
+pub use crate::ascii_common::ReadLineResult;
 use crate::ascii_consts::*;
 use crate::ascii_string::AsciiString;
 use std::io::{BufRead, BufReader, BufWriter, IntoInnerError, Read, Write};
-
-/// The result of a call to `AsciiStreamReader::read_line()`.
-#[derive(Debug)]
-pub enum ReadLineResult {
-    /// The number of bytes read.
-    Success(usize),
-    /// The end of the stream has been reached.
-    EOF,
-    /// An error occurred.
-    Error(std::io::Error),
-}
-
-impl ReadLineResult {
-    /// Returns true if the result is `Success`.
-    #[inline(always)]
-    pub fn is_success(&self) -> bool {
-        matches!(self, Self::Success(_))
-    }
-    /// Returns true if the result is `EOF`.
-    #[inline(always)]
-    pub fn is_eof(&self) -> bool {
-        matches!(self, Self::EOF)
-    }
-    /// Returns true if the result is `Error`.
-    #[inline(always)]
-    pub fn is_error(&self) -> bool {
-        matches!(self, Self::Error(_))
-    }
-    /// Returns the number of bytes read.
-    /// # Panics
-    /// Panics if the result is `EOF` or `Error`.
-    #[inline(always)]
-    pub fn unwrap(self) -> usize {
-        match self {
-            Self::Success(v) => v,
-            Self::EOF => panic!("Called unwrap on EOF"),
-            Self::Error(e) => panic!("Called unwrap on Error: {}", e),
-        }
-    }
-}
 
 /// A buffered reader which reads data as ascii characters.
 /// # Sample Usage
@@ -121,6 +82,10 @@ impl<R: Read> AsciiStreamReader<R> {
         self.inner.capacity()
     }
     /// Reads the next line of ascii characters into the specified AsciiString.
+    /// * the line terminator is discarded.
+    /// * the returned Success(value) is the number of bytes pushed to AsciiString, not the number of bytes read
+    ///   * meaning that if the line terminator is \r\n, the returned value is 2 less than the number of bytes read.
+    ///   * returned value of 0 does not mean EOF. It means that the line is empty, but EOF has not been reached.
     #[inline]
     pub fn read_line(&mut self, buf: &mut AsciiString) -> ReadLineResult {
         let result = self.read_until(LF, buf);

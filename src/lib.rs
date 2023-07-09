@@ -335,6 +335,7 @@
 //! }
 //! ```
 
+pub mod ascii_common;
 pub mod ascii_consts;
 pub mod ascii_group;
 pub mod ascii_stream;
@@ -345,6 +346,7 @@ pub mod ascii_traits;
 pub mod ascii_translators;
 
 pub mod prelude {
+    pub use crate::ascii_common::*;
     pub use crate::ascii_consts::*;
     pub use crate::ascii_group::*;
     pub use crate::ascii_stream::*;

@@ -1,7 +1,7 @@
 #![cfg(feature = "async")]
 
+pub use crate::ascii_common::ReadLineResult;
 use crate::ascii_consts::*;
-use crate::ascii_stream::ReadLineResult;
 use crate::ascii_string::AsciiString;
 use futures::io::{AsyncRead, AsyncWrite, BufReader, BufWriter};
 use futures::{AsyncBufReadExt, AsyncReadExt, AsyncWriteExt};
