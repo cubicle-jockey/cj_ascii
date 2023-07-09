@@ -18,7 +18,7 @@
 //! * async stream support via AsciiStreamReaderAsync and AsciiStreamWriterAsync (included in this crate).
 //! ```
 //! # samples
-//! basic example
+//! Basic example
 //! ```rust
 //!     use cj_ascii::prelude::*;
 //!
@@ -74,7 +74,7 @@
 //!     assert_eq!(astring.to_string(), "GHIJKL");
 //! ```
 //! Iter
-//! * user iter() to iterate over the raw bytes.
+//! * use iter() to iterate over the raw bytes.
 //! ```rust
 //!     use cj_ascii::prelude::*;
 //!     let mut astring = AsciiString::new();
@@ -98,7 +98,7 @@
 //!     assert_eq!(iter.next(), None);
 //! ```
 //! Iter Mut
-//! * user iter_mut() to iterate over and modify the raw bytes.
+//! * use iter_mut() to iterate over and modify the raw bytes.
 //! ```rust
 //!     use cj_ascii::prelude::*;
 //!     let mut astring = AsciiString::new();

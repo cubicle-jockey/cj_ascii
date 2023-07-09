@@ -23,7 +23,7 @@ Key features:
 * async stream support via AsciiStreamReaderAsync and AsciiStreamWriterAsync (included in this crate).
 ```
 # samples
-basic example
+Basic example
 ```rust
 fn main() {
     use cj_ascii::prelude::*;
@@ -87,7 +87,7 @@ fn main() {
 }
 ```
 Iter
-* user iter() to iterate over the raw bytes.
+* use iter() to iterate over the raw bytes.
 ```rust
 fn main() {
     use cj_ascii::prelude::*;
@@ -113,7 +113,7 @@ fn main() {
 }
 ```
 Iter Mut
-* user iter_mut() to iterate over and modify the raw bytes.
+* use iter_mut() to iterate over and modify the raw bytes.
 ```rust
 fn main() {
     use cj_ascii::prelude::*;
