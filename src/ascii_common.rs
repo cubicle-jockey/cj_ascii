@@ -1,7 +1,7 @@
 /// The result of a call to `AsciiStreamReader::read_line()`.
 #[derive(Debug)]
 pub enum ReadLineResult {
-    /// The number of bytes read.
+    /// The number of bytes pushed to the result buf.
     Success(usize),
     /// The end of the stream has been reached.
     EOF,
