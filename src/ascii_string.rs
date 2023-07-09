@@ -655,7 +655,7 @@ impl Add<&AsciiString> for AsciiString {
     /// Concatenates two `AsciiString`s.
     #[inline(always)]
     fn add(mut self, rhs: &AsciiString) -> Self::Output {
-        self.bytes.extend(rhs.bytes.clone());
+        self.bytes.extend(&rhs.bytes);
         self
     }
 }
