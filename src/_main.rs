@@ -13,6 +13,8 @@ mod ascii_group;
 use ascii_group::*;
 mod ascii_stream;
 use ascii_stream::*;
+mod ascii_common;
+use ascii_common::*;
 
 pub fn main() {
     for i in 0..=255 {
